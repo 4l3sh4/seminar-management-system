@@ -1,0 +1,23 @@
+#BlueJ class context
+comment0.target=LoginFrame
+comment0.text=\r\n\ LoginFrame\ -\ Main\ login\ interface\ for\ the\ Seminar\ Management\ System\r\n
+comment1.params=
+comment1.target=LoginFrame()
+comment2.params=
+comment2.target=void\ initializeUI()
+comment3.params=
+comment3.target=void\ performLogin()
+comment4.params=
+comment4.target=void\ openRegisterDialog()
+comment4.text=\r\n\ Registration\ dialog\:\r\n\ -\ User\ does\ NOT\ enter\ ID\ (system\ generates\ it)\r\n\ -\ Adds\ to\ DataManager\ lists\r\n\ -\ Attempts\ to\ save\ via\ DataManager.saveData()\ if\ you\ implemented\ it\r\n
+comment5.params=role
+comment5.target=java.lang.String\ generateNextUserId(java.lang.String)
+comment5.text=\r\n\ Generates\ IDs\ like\:\r\n\ Student\ ->\ S001,\ S002,\ ...\r\n\ Evaluator\ ->\ E001,\ E002,\ ...\r\n\ Coordinator\ ->\ C001,\ C002,\ ...\r\n
+comment6.params=user
+comment6.target=void\ openDashboard(models.User)
+comment7.params=target\ methodName
+comment7.target=void\ invokeIfExists(java.lang.Object,\ java.lang.String)
+comment7.text=\r\n\ Calls\ a\ no-arg\ method\ if\ it\ exists\ (so\ your\ project\ still\ compiles\ even\ if\ you\ haven't\ added\ it\ yet).\r\n\ Example\:\ DataManager.saveData(),\ DataManager.loadData()\r\n
+comment8.params=args
+comment8.target=void\ main(java.lang.String[])
+numComments=9

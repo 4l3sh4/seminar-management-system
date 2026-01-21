@@ -1,0 +1,20 @@
+#BlueJ class context
+comment0.target=Student
+comment0.text=\r\n\ Student\ class\ -\ represents\ a\ presenter\ in\ the\ seminar\r\n\ Updated\ for\ persistence\ (Serializable)\r\n
+comment1.params=userId\ name\ email\ password\ supervisorName
+comment1.target=Student(java.lang.String,\ java.lang.String,\ java.lang.String,\ java.lang.String,\ java.lang.String)
+comment2.params=
+comment2.target=java.lang.String\ getSupervisorName()
+comment3.params=supervisorName
+comment3.target=void\ setSupervisorName(java.lang.String)
+comment4.params=
+comment4.target=java.util.List\ getSubmissions()
+comment5.params=title\ abstractText\ presentationType\ filePath
+comment5.target=Submission\ registerSubmission(java.lang.String,\ java.lang.String,\ java.lang.String,\ java.lang.String)
+comment6.params=submission\ filePath
+comment6.target=boolean\ uploadMaterial(Submission,\ java.lang.String)
+comment7.params=
+comment7.target=void\ displayDashboard()
+comment8.params=
+comment8.target=java.lang.String\ toString()
+numComments=9
