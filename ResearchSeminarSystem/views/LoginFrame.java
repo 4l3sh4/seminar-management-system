@@ -10,6 +10,10 @@ import java.util.List;
 
 /**
  * LoginFrame - Main login interface for the Seminar Management System
+ * Updated: Registration no longer asks for Supervisor/Department/Expertise.
+ * - Student supervisor will be filled later (e.g., during submission / profile)
+ * - Coordinator department removed from registration (single department system)
+ * - Evaluator expertise removed from registration (can be filled later)
  */
 public class LoginFrame extends JFrame {
     private JTextField userIdField;
@@ -24,8 +28,7 @@ public class LoginFrame extends JFrame {
     public LoginFrame() {
         dataManager = DataManager.getInstance();
 
-        // If you added persistence methods in DataManager (loadData / saveData),
-        // this will auto-load saved data without breaking compilation if you haven't.
+        // Auto-load saved data if DataManager.loadData() exists
         invokeIfExists(dataManager, "loadData");
 
         initializeUI();
@@ -155,101 +158,102 @@ public class LoginFrame extends JFrame {
     }
 
     /**
-     * Registration dialog:
-     * - User does NOT enter ID (system generates it)
-     * - Adds to DataManager lists
-     * - Attempts to save via DataManager.saveData() if you implemented it
+     * Registration dialog
      */
     private void openRegisterDialog() {
+        // Create a custom dialog so we can remove the Cancel button
+        JDialog dialog = new JDialog(this, "Register New User", true);
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dialog.setLayout(new BorderLayout(10, 10));
+
         JTextField nameField = new JTextField();
         JTextField emailField = new JTextField();
         JPasswordField passField = new JPasswordField();
         JPasswordField confirmField = new JPasswordField();
-
         JComboBox<String> roleBox = new JComboBox<>(new String[]{"Student", "Evaluator", "Coordinator"});
 
-        JLabel extraLabel = new JLabel("Supervisor (Student):");
-        JTextField extraField = new JTextField();
+        JPanel form = new JPanel(new GridLayout(0, 2, 10, 10));
+        form.setBorder(BorderFactory.createEmptyBorder(15, 15, 10, 15));
+        form.add(new JLabel("Name:")); form.add(nameField);
+        form.add(new JLabel("Email:")); form.add(emailField);
+        form.add(new JLabel("Password:")); form.add(passField);
+        form.add(new JLabel("Confirm Password:")); form.add(confirmField);
+        form.add(new JLabel("Role:")); form.add(roleBox);
 
-        roleBox.addActionListener(e -> {
+        JButton okBtn = new JButton("OK");
+        okBtn.addActionListener(e -> {
+            String name = nameField.getText().trim();
+            String email = emailField.getText().trim();
+            String password = new String(passField.getPassword()).trim();
+            String confirm = new String(confirmField.getPassword()).trim();
             String role = (String) roleBox.getSelectedItem();
-            if ("Student".equals(role)) extraLabel.setText("Supervisor (Student):");
-            else if ("Evaluator".equals(role)) extraLabel.setText("Expertise (Evaluator):");
-            else extraLabel.setText("Department (Coordinator):");
-        });
 
-        JPanel panel = new JPanel(new GridLayout(0, 2, 10, 10));
-        panel.add(new JLabel("Name:")); panel.add(nameField);
-        panel.add(new JLabel("Email:")); panel.add(emailField);
-        panel.add(new JLabel("Password:")); panel.add(passField);
-        panel.add(new JLabel("Confirm Password:")); panel.add(confirmField);
-        panel.add(new JLabel("Role:")); panel.add(roleBox);
-        panel.add(extraLabel); panel.add(extraField);
-
-        int result = JOptionPane.showConfirmDialog(this, panel,
-                "Register New User", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-
-        if (result != JOptionPane.OK_OPTION) return;
-
-        String name = nameField.getText().trim();
-        String email = emailField.getText().trim();
-        String password = new String(passField.getPassword()).trim();
-        String confirm = new String(confirmField.getPassword()).trim();
-        String role = (String) roleBox.getSelectedItem();
-        String extra = extraField.getText().trim();
-
-        if (name.isEmpty() || email.isEmpty() || password.isEmpty() || confirm.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    "Please fill in all required fields.",
-                    "Validation Error",
-                    JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        if (!password.equals(confirm)) {
-            JOptionPane.showMessageDialog(this,
-                    "Passwords do not match.",
-                    "Validation Error",
-                    JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        // Generate NEW user ID automatically
-        String newId = generateNextUserId(role);
-
-        try {
-            if ("Student".equals(role)) {
-                if (extra.isEmpty()) extra = "Unknown Supervisor";
-                dataManager.addStudent(new Student(newId, name, email, password, extra));
-
-            } else if ("Evaluator".equals(role)) {
-                if (extra.isEmpty()) extra = "General";
-                dataManager.addEvaluator(new Evaluator(newId, name, email, password, extra));
-
-            } else { // Coordinator
-                if (extra.isEmpty()) extra = "Unknown Dept";
-                dataManager.addCoordinator(new Coordinator(newId, name, email, password, extra));
+            if (name.isEmpty() || email.isEmpty() || password.isEmpty() || confirm.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog,
+                        "Please fill in all required fields.",
+                        "Validation Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
             }
 
-            // Try to persist if DataManager.saveData() exists
-            invokeIfExists(dataManager, "saveData");
+            if (!password.equals(confirm)) {
+                JOptionPane.showMessageDialog(dialog,
+                        "Passwords do not match.",
+                        "Validation Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
-            JOptionPane.showMessageDialog(this,
-                    "Registration successful!\nYour User ID is: " + newId + "\nYou can now log in.",
-                    "Success",
-                    JOptionPane.INFORMATION_MESSAGE);
+            String newId = generateNextUserId(role);
 
-            // Auto-fill login fields
-            userIdField.setText(newId);
-            passwordField.setText(password);
-            roleComboBox.setSelectedItem(role);
+            try {
+                if ("Student".equals(role)) {
+                    dataManager.addStudent(new Student(newId, name, email, password, ""));
+                    // If you have a 4-arg constructor, use:
+                    // dataManager.addStudent(new Student(newId, name, email, password));
+                } else if ("Evaluator".equals(role)) {
+                    dataManager.addEvaluator(new Evaluator(newId, name, email, password, ""));
+                    // dataManager.addEvaluator(new Evaluator(newId, name, email, password));
+                } else { // Coordinator
+                    dataManager.addCoordinator(new Coordinator(newId, name, email, password, ""));
+                    // dataManager.addCoordinator(new Coordinator(newId, name, email, password));
+                }
 
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Registration failed: " + ex.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
-        }
+                invokeIfExists(dataManager, "saveData");
+
+                JOptionPane.showMessageDialog(this,
+                        "Registration successful!\nYour User ID is: " + newId + "\nYou can now log in.",
+                        "Success",
+                        JOptionPane.INFORMATION_MESSAGE);
+
+                // Auto-fill login fields
+                userIdField.setText(newId);
+                passwordField.setText(password);
+                roleComboBox.setSelectedItem(role);
+
+                dialog.dispose(); // close after success
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(dialog,
+                        "Registration failed: " + ex.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        // Bottom button panel (OK only)
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        btnPanel.add(okBtn);
+
+        dialog.add(form, BorderLayout.CENTER);
+        dialog.add(btnPanel, BorderLayout.SOUTH);
+
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+
+        // Optional: pressing Enter triggers OK
+        dialog.getRootPane().setDefaultButton(okBtn);
+
+        dialog.setVisible(true);
     }
 
     /**

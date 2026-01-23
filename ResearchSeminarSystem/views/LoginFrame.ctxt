@@ -1,6 +1,6 @@
 #BlueJ class context
 comment0.target=LoginFrame
-comment0.text=\r\n\ LoginFrame\ -\ Main\ login\ interface\ for\ the\ Seminar\ Management\ System\r\n
+comment0.text=\r\n\ LoginFrame\ -\ Main\ login\ interface\ for\ the\ Seminar\ Management\ System\r\n\ Updated\:\ Registration\ no\ longer\ asks\ for\ Supervisor/Department/Expertise.\r\n\ -\ Student\ supervisor\ will\ be\ filled\ later\ (e.g.,\ during\ submission\ /\ profile)\r\n\ -\ Coordinator\ department\ removed\ from\ registration\ (single\ department\ system)\r\n\ -\ Evaluator\ expertise\ removed\ from\ registration\ (can\ be\ filled\ later)\r\n
 comment1.params=
 comment1.target=LoginFrame()
 comment2.params=
@@ -9,7 +9,7 @@ comment3.params=
 comment3.target=void\ performLogin()
 comment4.params=
 comment4.target=void\ openRegisterDialog()
-comment4.text=\r\n\ Registration\ dialog\:\r\n\ -\ User\ does\ NOT\ enter\ ID\ (system\ generates\ it)\r\n\ -\ Adds\ to\ DataManager\ lists\r\n\ -\ Attempts\ to\ save\ via\ DataManager.saveData()\ if\ you\ implemented\ it\r\n
+comment4.text=\r\n\ Registration\ dialog\r\n
 comment5.params=role
 comment5.target=java.lang.String\ generateNextUserId(java.lang.String)
 comment5.text=\r\n\ Generates\ IDs\ like\:\r\n\ Student\ ->\ S001,\ S002,\ ...\r\n\ Evaluator\ ->\ E001,\ E002,\ ...\r\n\ Coordinator\ ->\ C001,\ C002,\ ...\r\n
