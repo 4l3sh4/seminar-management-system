@@ -4,30 +4,32 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Submission class - represents a research presentation submission
- * Updated for persistence (Serializable) + safer null handling + supervisor stored in submission
- */
+// Submission class - represents a research presentation submission
 public class Submission implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String submissionId;
     private String title;
     private String abstractText;
-    private String supervisorName;          // ✅ store supervisor inside submission (so it persists correctly)
-    private String presentationType;        // "Oral" or "Poster"
+
+    private String supervisorName;
+
+    private String presentationType; // "Oral" or "Poster"
     private String filePath;
+
     private Student student;
     private List<Evaluation> evaluations;
-    private String boardId;                // For poster presentations
 
+    private String boardId; // For poster presentations
+
+    //Main constructor
     public Submission(String submissionId, String title, String abstractText,
                       String supervisorName, String presentationType,
                       String filePath, Student student) {
         this.submissionId = submissionId;
         this.title = title;
         this.abstractText = abstractText;
-        this.supervisorName = supervisorName;
+        this.supervisorName = (supervisorName != null) ? supervisorName : "";
         this.presentationType = presentationType;
         this.filePath = filePath;
         this.student = student;
@@ -35,7 +37,7 @@ public class Submission implements Serializable {
         this.boardId = "";
     }
 
-    // ✅ Backward-compatible constructor (if your existing code still calls the old one)
+    //Backward compatible constructor
     public Submission(String submissionId, String title, String abstractText,
                       String presentationType, String filePath, Student student) {
         this(submissionId, title, abstractText,
@@ -43,7 +45,8 @@ public class Submission implements Serializable {
                 presentationType, filePath, student);
     }
 
-    // ---------- Getters and Setters ----------
+    // ---------- Getters / Setters ----------
+
     public String getSubmissionId() {
         return submissionId;
     }
@@ -69,7 +72,7 @@ public class Submission implements Serializable {
     }
 
     public void setSupervisorName(String supervisorName) {
-        this.supervisorName = supervisorName;
+        this.supervisorName = (supervisorName != null) ? supervisorName : "";
     }
 
     public String getPresentationType() {
@@ -96,15 +99,6 @@ public class Submission implements Serializable {
         this.student = student;
     }
 
-    // Convenience helpers for UI/reports
-    public String getStudentId() {
-        return (student != null && student.getUserId() != null) ? student.getUserId() : "";
-    }
-
-    public String getStudentName() {
-        return (student != null && student.getName() != null) ? student.getName() : "Unknown Student";
-    }
-
     public List<Evaluation> getEvaluations() {
         if (evaluations == null) evaluations = new ArrayList<>();
         return evaluations;
@@ -115,10 +109,20 @@ public class Submission implements Serializable {
     }
 
     public void setBoardId(String boardId) {
-        this.boardId = boardId;
+        this.boardId = (boardId != null) ? boardId : "";
     }
 
-    // ---------- Evaluation ----------
+    // Convenience helpers
+    public String getStudentId() {
+        return (student != null && student.getUserId() != null) ? student.getUserId() : "";
+    }
+
+    public String getStudentName() {
+        return (student != null && student.getName() != null) ? student.getName() : "Unknown Student";
+    }
+
+    // ---------- Evaluation helpers ----------
+
     public void addEvaluation(Evaluation evaluation) {
         if (evaluation == null) return;
         getEvaluations().add(evaluation);
@@ -129,42 +133,22 @@ public class Submission implements Serializable {
         getEvaluations().remove(evaluation);
     }
 
-    // Calculate average score from all evaluations
     public double getAverageScore() {
         List<Evaluation> evals = getEvaluations();
         if (evals.isEmpty()) return 0.0;
 
         double total = 0.0;
         int count = 0;
-
-        for (Evaluation eval : evals) {
-            if (eval == null) continue;
-            total += eval.getTotalScore();
+        for (Evaluation ev : evals) {
+            if (ev == null) continue;
+            total += ev.getTotalScore();
             count++;
         }
-
         return (count == 0) ? 0.0 : total / count;
     }
 
-    // Helper: did this evaluator already evaluate this submission?
-    public boolean hasEvaluationFromEvaluator(String evaluatorId) {
-        if (evaluatorId == null) return false;
-        for (Evaluation ev : getEvaluations()) {
-            if (ev != null && evaluatorId.equals(ev.getEvaluatorId())) return true;
-        }
-        return false;
-    }
-
-    // Helper: get this evaluator's evaluation (if exists)
-    public Evaluation getEvaluationByEvaluator(String evaluatorId) {
-        if (evaluatorId == null) return null;
-        for (Evaluation ev : getEvaluations()) {
-            if (ev != null && evaluatorId.equals(ev.getEvaluatorId())) return ev;
-        }
-        return null;
-    }
-
     // ---------- Details ----------
+
     public String getDetails() {
         String safeId = (submissionId != null) ? submissionId : "";
         String safeTitle = (title != null) ? title : "";
@@ -172,6 +156,12 @@ public class Submission implements Serializable {
         String safeSupervisor = (supervisorName != null) ? supervisorName : "";
         String safeType = (presentationType != null) ? presentationType : "";
         String safeFile = (filePath != null && !filePath.isEmpty()) ? filePath : "Not uploaded";
+
+        // Board id display
+        String safeBoard = "N/A";
+        if ("Poster".equalsIgnoreCase(safeType)) {
+            safeBoard = (boardId != null && !boardId.trim().isEmpty()) ? boardId : "(Not assigned)";
+        }
 
         int evalCount = getEvaluations().size();
         double avg = getAverageScore();
@@ -181,16 +171,18 @@ public class Submission implements Serializable {
                 "Research Title: %s\n" +
                 "Student: %s\n" +
                 "Supervisor: %s\n" +
-                "Preferred Presentation Type: %s\n\n" +
+                "Preferred Presentation Type: %s\n" +
+                "Board ID: %s\n\n" +
                 "Abstract:\n%s\n\n" +
                 "File: %s\n\n" +
                 "Average Score: %.2f\n" +
-                "#Evaluations: %d",
+                "No. Evaluations: %d",
                 safeId,
                 safeTitle,
                 getStudentName(),
                 safeSupervisor,
                 safeType,
+                safeBoard,
                 safeAbstract,
                 safeFile,
                 avg,

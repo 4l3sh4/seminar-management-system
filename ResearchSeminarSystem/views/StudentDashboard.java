@@ -51,7 +51,7 @@ public class StudentDashboard extends JFrame {
 
         // Tabs
         JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.addTab("My Submissions", createSubmissionsPanel());
+        tabbedPane.addTab("Submissions", createSubmissionsPanel());
         tabbedPane.addTab("New Registration", createRegistrationPanel());
 
         // Bottom

@@ -1,6 +1,5 @@
 #BlueJ class context
 comment0.target=EvaluatorDashboard
-comment0.text=\r\n\ EvaluatorDashboard\ (Wizard\ Flow)\r\n\ Step\ 1\:\ Select\ Session\r\n\ Step\ 2\:\ Select\ Presentation\ under\ session\r\n\ Step\ 3\:\ Evaluate\ selected\ presentation\r\n\r\n\ Rules\:\r\n\ -\ Evaluator\ sees\ only\ sessions\ they\ are\ assigned\ to\r\n\ -\ Evaluator\ can\ evaluate\ only\ once\ per\ submission\ (must\ delete\ to\ re-evaluate)\r\n
 comment1.params=evaluator
 comment1.target=EvaluatorDashboard(models.Evaluator)
 comment10.params=

@@ -11,16 +11,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * EvaluatorDashboard (Wizard Flow)
- * Step 1: Select Session
- * Step 2: Select Presentation under session
- * Step 3: Evaluate selected presentation
- *
- * Rules:
- * - Evaluator sees only sessions they are assigned to
- * - Evaluator can evaluate only once per submission (must delete to re-evaluate)
- */
+// Evaluator Dashboard
 public class EvaluatorDashboard extends JFrame {
     private final Evaluator evaluator;
     private final DataManager dataManager;
@@ -136,10 +127,9 @@ public class EvaluatorDashboard extends JFrame {
         sessionTable = new JTable(sessionModel);
         panel.add(new JScrollPane(sessionTable), BorderLayout.CENTER);
 
-        // Buttons
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
-        JButton nextBtn = new JButton("Next ➜");
+        JButton nextBtn = new JButton("Next \u2192");
         nextBtn.setBackground(new Color(52, 152, 219));
         nextBtn.setForeground(Color.WHITE);
 
@@ -172,7 +162,8 @@ public class EvaluatorDashboard extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createTitledBorder("Choose a Presentation"));
 
-        String[] cols = {"Submission ID", "Title", "Type", "Student", "File", "Avg Score", " No. Evaluations"};
+        //Board ID column
+        String[] cols = {"Submission ID", "Title", "Type", "Board ID", "Student", "File", "Avg Score", "No. Evaluations"};
         presentationModel = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
@@ -181,7 +172,7 @@ public class EvaluatorDashboard extends JFrame {
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
-        JButton backBtn = new JButton("⬅ Back");
+        JButton backBtn = new JButton("\u2190 Back");
         backBtn.addActionListener(e -> showStep("STEP1"));
 
         JButton viewBtn = new JButton("View Details");
@@ -190,7 +181,7 @@ public class EvaluatorDashboard extends JFrame {
         JButton openFileBtn = new JButton("Open File");
         openFileBtn.addActionListener(e -> openSelectedPresentationFile());
 
-        JButton nextBtn = new JButton("Next ➜");
+        JButton nextBtn = new JButton("Next \u2192");
         nextBtn.setBackground(new Color(52, 152, 219));
         nextBtn.setForeground(Color.WHITE);
         nextBtn.addActionListener(e -> {
@@ -207,7 +198,7 @@ public class EvaluatorDashboard extends JFrame {
 
             if (selectedSubmission == null) return;
 
-            // block if already evaluated by this evaluator
+            // Block if already evaluated by this evaluator
             if (findMyEvaluationForSubmission(selectedSubmission) != null) {
                 JOptionPane.showMessageDialog(this,
                         "You already evaluated this submission.\n" +
@@ -287,7 +278,7 @@ public class EvaluatorDashboard extends JFrame {
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
-        JButton backBtn = new JButton("⬅ Back");
+        JButton backBtn = new JButton("\u2190 Back");
         backBtn.addActionListener(e -> showStep("STEP2"));
 
         JButton submitBtn = new JButton("Submit Evaluation");
@@ -350,18 +341,21 @@ public class EvaluatorDashboard extends JFrame {
         for (Submission sub : session.getSubmissions()) {
             if (sub == null) continue;
 
-            String fileStatus = "Not uploaded";
-            String path = sub.getFilePath();
-            if (path != null && !path.isEmpty()) {
-                fileStatus = new File(path).exists() ? "Uploaded" : "Missing file";
+            String type = sub.getPresentationType();
+            String boardDisplay = "N/A";
+            if ("Poster".equalsIgnoreCase(type)) {
+                boardDisplay = (sub.getBoardId() != null && !sub.getBoardId().trim().isEmpty())
+                        ? sub.getBoardId()
+                        : "(Not assigned)";
             }
 
             presentationModel.addRow(new Object[]{
                     sub.getSubmissionId(),
                     sub.getTitle(),
-                    sub.getPresentationType(),
+                    type,
+                    boardDisplay,
                     safeStudentName(sub),
-                    fileStatus,
+                    (sub.getFilePath() == null || sub.getFilePath().isEmpty()) ? "Not uploaded" : "Uploaded",
                     String.format("%.2f", sub.getAverageScore()),
                     (sub.getEvaluations() == null ? 0 : sub.getEvaluations().size())
             });
@@ -376,23 +370,18 @@ public class EvaluatorDashboard extends JFrame {
                     "No Selection", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
         String subId = (String) presentationModel.getValueAt(row, 0);
         Submission sub = dataManager.findSubmissionById(subId);
         if (sub == null) return;
 
-        JTextArea area = new JTextArea(sub.getDetails());
+        JTextArea area = new JTextArea(sub.getDetails(), 18, 60);
         area.setEditable(false);
         area.setLineWrap(true);
         area.setWrapStyleWord(true);
 
-        JScrollPane scroll = new JScrollPane(area);
-        scroll.setPreferredSize(new Dimension(520, 420));
-
-        JOptionPane.showMessageDialog(this, scroll,
+        JOptionPane.showMessageDialog(this, new JScrollPane(area),
                 "Presentation Details", JOptionPane.INFORMATION_MESSAGE);
     }
-
 
     private void openSelectedPresentationFile() {
         int row = presentationTable.getSelectedRow();
@@ -407,37 +396,39 @@ public class EvaluatorDashboard extends JFrame {
         Submission sub = dataManager.findSubmissionById(subId);
         if (sub == null) return;
 
-        String filePath = sub.getFilePath();
-        if (filePath == null || filePath.trim().isEmpty()) {
+        String path = (sub.getFilePath() == null) ? "" : sub.getFilePath().trim();
+        if (path.isEmpty()) {
             JOptionPane.showMessageDialog(this,
                     "No file uploaded for this submission.",
-                    "No File", JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-
-        File file = new File(filePath);
-        if (!file.exists()) {
-            JOptionPane.showMessageDialog(this,
-                    "File not found:\n" + file.getAbsolutePath() + "\n\n" +
-                            "This usually happens if the file was moved/deleted, or the path is from another computer.\n" +
-                            "Fix: copy uploads into a shared project folder (e.g., uploads/) when students upload.",
-                    "Missing File", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        if (!Desktop.isDesktopSupported()) {
-            JOptionPane.showMessageDialog(this,
-                    "Desktop open is not supported on this system.",
-                    "Not Supported", JOptionPane.ERROR_MESSAGE);
+                    "No File", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         try {
-            Desktop.getDesktop().open(file);
+            File f = new File(path);
+
+            // If student uploaded a relative path accidentally, try it as-is first
+            if (!f.exists()) {
+                JOptionPane.showMessageDialog(this,
+                        "File not found:\n" + path + "\n\n" +
+                                "Tip: The saved filePath must point to a real file on this computer.",
+                        "File Missing", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (!Desktop.isDesktopSupported()) {
+                JOptionPane.showMessageDialog(this,
+                        "Desktop open is not supported on this system.",
+                        "Not Supported", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            Desktop.getDesktop().open(f);
+
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
-                    "Failed to open file:\n" + ex.getMessage(),
-                    "Open Failed", JOptionPane.ERROR_MESSAGE);
+                    "Failed to open file: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -547,7 +538,7 @@ public class EvaluatorDashboard extends JFrame {
     }
 
     // =========================================================
-    // EVALUATIONS TAB
+    // EVALUATIONS TAB (includes delete)
     // =========================================================
 
     private JPanel createMyEvaluationsPanel() {
@@ -615,7 +606,12 @@ public class EvaluatorDashboard extends JFrame {
 
         Evaluation match = findMyEvaluationForSubmission(sub);
         if (match != null) {
-            JOptionPane.showMessageDialog(this, match.getDetails(),
+            JTextArea area = new JTextArea(match.getDetails(), 16, 60);
+            area.setEditable(false);
+            area.setLineWrap(true);
+            area.setWrapStyleWord(true);
+
+            JOptionPane.showMessageDialog(this, new JScrollPane(area),
                     "Evaluation Details", JOptionPane.INFORMATION_MESSAGE);
         }
     }
