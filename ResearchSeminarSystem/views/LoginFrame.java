@@ -8,13 +8,7 @@ import java.awt.*;
 import java.lang.reflect.Method;
 import java.util.List;
 
-/**
- * LoginFrame - Main login interface for the Seminar Management System
- * Updated: Registration no longer asks for Supervisor/Department/Expertise.
- * - Student supervisor will be filled later (e.g., during submission / profile)
- * - Coordinator department removed from registration (single department system)
- * - Evaluator expertise removed from registration (can be filled later)
- */
+// LoginFrame - Main login interface for the Seminar Management System
 public class LoginFrame extends JFrame {
     private JTextField userIdField;
     private JPasswordField passwordField;
@@ -157,17 +151,15 @@ public class LoginFrame extends JFrame {
         }
     }
 
-    /**
-     * Registration dialog
-     */
+    // Registration dialog
     private void openRegisterDialog() {
-        // Create a custom dialog so we can remove the Cancel button
         JDialog dialog = new JDialog(this, "Register New User", true);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dialog.setLayout(new BorderLayout(10, 10));
 
         JTextField nameField = new JTextField();
         JTextField emailField = new JTextField();
+        JTextField contactField = new JTextField(); // NEW
         JPasswordField passField = new JPasswordField();
         JPasswordField confirmField = new JPasswordField();
         JComboBox<String> roleBox = new JComboBox<>(new String[]{"Student", "Evaluator", "Coordinator"});
@@ -176,6 +168,7 @@ public class LoginFrame extends JFrame {
         form.setBorder(BorderFactory.createEmptyBorder(15, 15, 10, 15));
         form.add(new JLabel("Name:")); form.add(nameField);
         form.add(new JLabel("Email:")); form.add(emailField);
+        form.add(new JLabel("Contact No:")); form.add(contactField); // NEW
         form.add(new JLabel("Password:")); form.add(passField);
         form.add(new JLabel("Confirm Password:")); form.add(confirmField);
         form.add(new JLabel("Role:")); form.add(roleBox);
@@ -184,13 +177,24 @@ public class LoginFrame extends JFrame {
         okBtn.addActionListener(e -> {
             String name = nameField.getText().trim();
             String email = emailField.getText().trim();
+            String contact = contactField.getText().trim(); // NEW
             String password = new String(passField.getPassword()).trim();
             String confirm = new String(confirmField.getPassword()).trim();
             String role = (String) roleBox.getSelectedItem();
 
-            if (name.isEmpty() || email.isEmpty() || password.isEmpty() || confirm.isEmpty()) {
+            if (name.isEmpty() || email.isEmpty() || contact.isEmpty() || password.isEmpty() || confirm.isEmpty()) {
                 JOptionPane.showMessageDialog(dialog,
                         "Please fill in all required fields.",
+                        "Validation Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Simple phone validation (adjust if you want stricter rules)
+            // Allow digits, spaces, +, -, parentheses
+            if (!contact.matches("[0-9+()\\-\\s]{7,20}")) {
+                JOptionPane.showMessageDialog(dialog,
+                        "Please enter a valid contact number (digits and + - ( ) only).",
                         "Validation Error",
                         JOptionPane.ERROR_MESSAGE);
                 return;
@@ -207,17 +211,27 @@ public class LoginFrame extends JFrame {
             String newId = generateNextUserId(role);
 
             try {
+                User createdUser;
+
                 if ("Student".equals(role)) {
-                    dataManager.addStudent(new Student(newId, name, email, password, ""));
-                    // If you have a 4-arg constructor, use:
-                    // dataManager.addStudent(new Student(newId, name, email, password));
+                    Student s = new Student(newId, name, email, password, "");
+                    createdUser = s;
+                    dataManager.addStudent(s);
+
                 } else if ("Evaluator".equals(role)) {
-                    dataManager.addEvaluator(new Evaluator(newId, name, email, password, ""));
-                    // dataManager.addEvaluator(new Evaluator(newId, name, email, password));
+                    Evaluator ev = new Evaluator(newId, name, email, password, "");
+                    createdUser = ev;
+                    dataManager.addEvaluator(ev);
+
                 } else { // Coordinator
-                    dataManager.addCoordinator(new Coordinator(newId, name, email, password, ""));
-                    // dataManager.addCoordinator(new Coordinator(newId, name, email, password));
+                    Coordinator c = new Coordinator(newId, name, email, password, "");
+                    createdUser = c;
+                    dataManager.addCoordinator(c);
                 }
+
+                // Save contact number into the object if your model supports it
+                // (e.g., setContactNumber / setPhoneNumber / setContactNo)
+                setContactIfPossible(createdUser, contact);
 
                 invokeIfExists(dataManager, "saveData");
 
@@ -231,7 +245,7 @@ public class LoginFrame extends JFrame {
                 passwordField.setText(password);
                 roleComboBox.setSelectedItem(role);
 
-                dialog.dispose(); // close after success
+                dialog.dispose();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(dialog,
                         "Registration failed: " + ex.getMessage(),
@@ -240,7 +254,6 @@ public class LoginFrame extends JFrame {
             }
         });
 
-        // Bottom button panel (OK only)
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         btnPanel.add(okBtn);
 
@@ -249,11 +262,21 @@ public class LoginFrame extends JFrame {
 
         dialog.pack();
         dialog.setLocationRelativeTo(this);
-
-        // Optional: pressing Enter triggers OK
         dialog.getRootPane().setDefaultButton(okBtn);
-
         dialog.setVisible(true);
+    }
+
+    // Tries to set contact number on the user object without breaking compilation
+    private static void setContactIfPossible(Object userObj, String contact) {
+        if (userObj == null) return;
+
+        String[] setterNames = {"setContactNumber", "setPhoneNumber", "setContactNo", "setPhone"};
+        for (String setter : setterNames) {
+            if (invokeIfExistsWithArg(userObj, setter, String.class, contact)) {
+                return; // stop after first successful setter
+            }
+        }
+        // If none exists, do nothing (safe fallback).
     }
 
     /**
@@ -276,13 +299,11 @@ public class LoginFrame extends JFrame {
                 String id = u.getUserId().trim().toUpperCase();
 
                 if (id.startsWith(prefix)) {
-                    String numPart = id.substring(1); // after prefix
+                    String numPart = id.substring(1);
                     try {
                         int n = Integer.parseInt(numPart);
                         if (n > max) max = n;
-                    } catch (NumberFormatException ignored) {
-                        // ignore non-numeric IDs
-                    }
+                    } catch (NumberFormatException ignored) { }
                 }
             }
         }
@@ -302,7 +323,7 @@ public class LoginFrame extends JFrame {
     }
 
     /**
-     * Calls a no-arg method if it exists (so your project still compiles even if you haven't added it yet).
+     * Calls a no-arg method if it exists.
      * Example: DataManager.saveData(), DataManager.loadData()
      */
     private static void invokeIfExists(Object target, String methodName) {
@@ -310,10 +331,24 @@ public class LoginFrame extends JFrame {
             Method m = target.getClass().getMethod(methodName);
             m.invoke(target);
         } catch (NoSuchMethodException ignored) {
-            // method doesn't exist (yet) -> do nothing
         } catch (Exception ex) {
-            // method exists but failed -> show in console only
             System.err.println("Failed calling " + methodName + "(): " + ex.getMessage());
+        }
+    }
+
+    /**
+     * Calls a 1-arg method if it exists; returns true if it was found and called successfully.
+     */
+    private static boolean invokeIfExistsWithArg(Object target, String methodName, Class<?> argType, Object argValue) {
+        try {
+            Method m = target.getClass().getMethod(methodName, argType);
+            m.invoke(target, argValue);
+            return true;
+        } catch (NoSuchMethodException ignored) {
+            return false;
+        } catch (Exception ex) {
+            System.err.println("Failed calling " + methodName + "(): " + ex.getMessage());
+            return false;
         }
     }
 

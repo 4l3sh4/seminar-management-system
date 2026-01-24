@@ -1,6 +1,5 @@
 #BlueJ class context
 comment0.target=CoordinatorDashboard
-comment0.text=\r\n\ CoordinatorDashboard\ -\ Interface\ for\ coordinators\ to\ manage\ sessions,\ assignments,\ reports\ and\ awards\r\n
 comment1.params=coordinator
 comment1.target=CoordinatorDashboard(models.Coordinator)
 comment10.params=
