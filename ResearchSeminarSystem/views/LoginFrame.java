@@ -26,7 +26,6 @@ public class LoginFrame extends JFrame {
         // Auto-load saved data if DataManager.loadData() exists
         invokeIfExists(dataManager, "loadData");
 
-        // ✅ Option A: Bigger readable UI fonts
         applyBiggerUIFont();
 
         initializeUI();
@@ -35,7 +34,6 @@ public class LoginFrame extends JFrame {
     private void initializeUI() {
         setTitle("Seminar Management System - Login");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
         // =========================
@@ -59,7 +57,7 @@ public class LoginFrame extends JFrame {
         centerWrapper.setBorder(new EmptyBorder(30, 40, 30, 40));
         add(centerWrapper, BorderLayout.CENTER);
 
-        // The form itself
+        // The form
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBorder(BorderFactory.createTitledBorder("Login"));
         formPanel.setPreferredSize(new Dimension(560, 280)); // ✅ prevents tiny look on large screens
@@ -148,9 +146,14 @@ public class LoginFrame extends JFrame {
         // Enter key to login
         passwordField.addActionListener(e -> performLogin());
 
-        // ✅ Use pack + minimum size instead of fixed setSize
         pack();
-        setMinimumSize(new Dimension(900, 550)); // ✅ not tiny when resized smaller
+
+        int minW = 900, minH = 550;
+        if (getWidth() < minW || getHeight() < minH) {
+            setSize(Math.max(getWidth(), minW), Math.max(getHeight(), minH));
+        }
+
+        setLocationRelativeTo(null);
     }
 
     private void performLogin() {
@@ -354,7 +357,6 @@ public class LoginFrame extends JFrame {
         }
     }
 
-    // ✅ Option A: bigger base UI fonts for large screens
     private void applyBiggerUIFont() {
         Font f = new Font("Arial", Font.PLAIN, 16);
 

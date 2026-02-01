@@ -25,6 +25,7 @@ public class CoordinatorDashboard extends JFrame {
 
     // Create session form fields
     private JTextField dateField;
+    private JTextField timeField;     // ✅ NEW
     private JTextField venueField;
     private JComboBox<String> typeBox;
 
@@ -88,6 +89,7 @@ public class CoordinatorDashboard extends JFrame {
         form.setBorder(BorderFactory.createTitledBorder("Create New Session"));
 
         dateField = new JTextField(10);   // e.g. 2026-02-01
+        timeField = new JTextField(8);    // ✅ NEW e.g. 10:30
         venueField = new JTextField(12);
         typeBox = new JComboBox<>(new String[]{"Oral", "Poster"});
 
@@ -98,6 +100,10 @@ public class CoordinatorDashboard extends JFrame {
 
         form.add(new JLabel("Date:"));
         form.add(dateField);
+
+        form.add(new JLabel("Time:"));          // ✅ NEW
+        form.add(timeField);                    // ✅ NEW
+
         form.add(new JLabel("Venue:"));
         form.add(venueField);
         form.add(new JLabel("Type:"));
@@ -110,7 +116,7 @@ public class CoordinatorDashboard extends JFrame {
         JPanel center = new JPanel(new GridLayout(1,3,10,10));
 
         // Sessions table
-        String[] sCols = {"Session ID", "Date", "Venue", "Type"};
+        String[] sCols = {"Session ID", "Date", "Time", "Venue", "Type"};  // ✅ UPDATED
         sessionModel = new DefaultTableModel(sCols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
@@ -224,6 +230,7 @@ public class CoordinatorDashboard extends JFrame {
     // ---------- Actions ----------
     private void createSession() {
         String date = dateField.getText().trim();
+        String time = timeField.getText().trim();        // ✅ NEW
         String venue = venueField.getText().trim();
         String type = (String) typeBox.getSelectedItem();
 
@@ -233,16 +240,34 @@ public class CoordinatorDashboard extends JFrame {
             return;
         }
 
+        // Optional time validation (simple). If you want strict HH:MM 24h, uncomment:
+        // if (!time.isEmpty() && !time.matches("([01]?\\d|2[0-3]):[0-5]\\d")) {
+        //     JOptionPane.showMessageDialog(this, "Time must be in HH:MM format (24h).",
+        //             "Validation Error", JOptionPane.ERROR_MESSAGE);
+        //     return;
+        // }
+
         try {
+            // Your Coordinator.createSession might still be the old signature (date, venue, type).
+            // So we create it like before, then set time onto the Session object.
             Session session = coordinator.createSession(date, venue, type);
+
+            // ✅ store the time into Session
+            session.setTime(time);
+
             dataManager.addSession(session);
+
+            // ✅ ensure persistence
+            dataManager.saveToDisk();
 
             JOptionPane.showMessageDialog(this, "Session created!\nID: " + session.getSessionId(),
                     "Success", JOptionPane.INFORMATION_MESSAGE);
 
             dateField.setText("");
+            timeField.setText("");          // ✅ NEW
             venueField.setText("");
             loadSessions();
+
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Failed to create session: " + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
@@ -276,7 +301,6 @@ public class CoordinatorDashboard extends JFrame {
             JOptionPane.showMessageDialog(this, "Submission assigned to session!",
                     "Success", JOptionPane.INFORMATION_MESSAGE);
 
-            // refresh
             loadSessions();
 
         } catch (Exception ex) {
@@ -312,7 +336,6 @@ public class CoordinatorDashboard extends JFrame {
             JOptionPane.showMessageDialog(this, "Evaluator assigned to session!",
                     "Success", JOptionPane.INFORMATION_MESSAGE);
 
-            // refresh
             loadSessions();
 
         } catch (Exception ex) {
@@ -381,9 +404,11 @@ public class CoordinatorDashboard extends JFrame {
     private void loadSessions() {
         sessionModel.setRowCount(0);
         for (Session s : dataManager.getSessions()) {
+            if (s == null) continue;
             sessionModel.addRow(new Object[]{
                     s.getSessionId(),
                     s.getDate(),
+                    s.getTime(),          // ✅ NEW
                     s.getVenue(),
                     s.getSessionType()
             });
@@ -393,6 +418,7 @@ public class CoordinatorDashboard extends JFrame {
     private void loadSubmissions() {
         submissionModel.setRowCount(0);
         for (Submission sub : dataManager.getSubmissions()) {
+            if (sub == null) continue;
             submissionModel.addRow(new Object[]{
                     sub.getSubmissionId(),
                     sub.getTitle(),
@@ -406,6 +432,7 @@ public class CoordinatorDashboard extends JFrame {
     private void loadEvaluators() {
         evaluatorModel.setRowCount(0);
         for (Evaluator e : dataManager.getEvaluators()) {
+            if (e == null) continue;
             evaluatorModel.addRow(new Object[]{
                     e.getUserId(),
                     e.getName()
@@ -432,9 +459,3 @@ public class CoordinatorDashboard extends JFrame {
         }
     }
 }
-
-
-
-
-
-

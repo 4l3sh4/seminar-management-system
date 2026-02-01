@@ -10,6 +10,7 @@ import java.awt.Desktop;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 // Evaluator Dashboard
 public class EvaluatorDashboard extends JFrame {
@@ -120,7 +121,8 @@ public class EvaluatorDashboard extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createTitledBorder("Select a Session"));
 
-        String[] cols = {"Session ID", "Date", "Venue", "Type", "No. Presentations"};
+        // ✅ UPDATED: include Time column
+        String[] cols = {"Session ID", "Date", "Time", "Venue", "Type", "No. Presentations"};
         sessionModel = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
@@ -129,9 +131,9 @@ public class EvaluatorDashboard extends JFrame {
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
-        JButton nextBtn = new JButton("Next \u2192");
-        nextBtn.setBackground(new Color(52, 152, 219));
-        nextBtn.setForeground(Color.WHITE);
+        JButton nextBtn = new JButton();
+        stylePrimaryButton(nextBtn);
+        setArrowButtonText(nextBtn, "Next", true);
 
         nextBtn.addActionListener(e -> {
             int row = sessionTable.getSelectedRow();
@@ -162,7 +164,7 @@ public class EvaluatorDashboard extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createTitledBorder("Choose a Presentation"));
 
-        //Board ID column
+        // Board ID column
         String[] cols = {"Submission ID", "Title", "Type", "Board ID", "Student", "File", "Avg Score", "No. Evaluations"};
         presentationModel = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
@@ -172,7 +174,8 @@ public class EvaluatorDashboard extends JFrame {
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
-        JButton backBtn = new JButton("\u2190 Back");
+        JButton backBtn = new JButton();
+        setArrowButtonText(backBtn, "Back", false);
         backBtn.addActionListener(e -> showStep("STEP1"));
 
         JButton viewBtn = new JButton("View Details");
@@ -181,9 +184,10 @@ public class EvaluatorDashboard extends JFrame {
         JButton openFileBtn = new JButton("Open File");
         openFileBtn.addActionListener(e -> openSelectedPresentationFile());
 
-        JButton nextBtn = new JButton("Next \u2192");
-        nextBtn.setBackground(new Color(52, 152, 219));
-        nextBtn.setForeground(Color.WHITE);
+        JButton nextBtn = new JButton();
+        stylePrimaryButton(nextBtn);
+        setArrowButtonText(nextBtn, "Next", true);
+
         nextBtn.addActionListener(e -> {
             int row = presentationTable.getSelectedRow();
             if (row == -1) {
@@ -278,7 +282,8 @@ public class EvaluatorDashboard extends JFrame {
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
-        JButton backBtn = new JButton("\u2190 Back");
+        JButton backBtn = new JButton();
+        setArrowButtonText(backBtn, "Back", false);
         backBtn.addActionListener(e -> showStep("STEP2"));
 
         JButton submitBtn = new JButton("Submit Evaluation");
@@ -306,8 +311,15 @@ public class EvaluatorDashboard extends JFrame {
         sessionModel.setRowCount(0);
         for (Session s : getMySessionsForEvaluator()) {
             int count = (s.getSubmissions() == null) ? 0 : s.getSubmissions().size();
+
+            // ✅ UPDATED: include time in the table row
             sessionModel.addRow(new Object[]{
-                    s.getSessionId(), s.getDate(), s.getVenue(), s.getSessionType(), count
+                    s.getSessionId(),
+                    s.getDate(),
+                    s.getTime(),      // ✅ NEW
+                    s.getVenue(),
+                    s.getSessionType(),
+                    count
             });
         }
     }
@@ -362,6 +374,10 @@ public class EvaluatorDashboard extends JFrame {
         }
     }
 
+    // =========================================================
+    // DETAILS POPUPS (BOLD LABELS)
+    // =========================================================
+
     private void viewPresentationDetails() {
         int row = presentationTable.getSelectedRow();
         if (row == -1) {
@@ -370,18 +386,98 @@ public class EvaluatorDashboard extends JFrame {
                     "No Selection", JOptionPane.WARNING_MESSAGE);
             return;
         }
+
         String subId = (String) presentationModel.getValueAt(row, 0);
         Submission sub = dataManager.findSubmissionById(subId);
         if (sub == null) return;
 
-        JTextArea area = new JTextArea(sub.getDetails(), 18, 60);
-        area.setEditable(false);
-        area.setLineWrap(true);
-        area.setWrapStyleWord(true);
+        String[] labels = {
+                "Submission ID:",
+                "Research Title:",
+                "Student:",
+                "Supervisor:",
+                "Preferred Presentation Type:",
+                "Board ID:",
+                "Abstract:",
+                "File:",
+                "Average Score:",
+                "#Evaluations:",
+                "No. Evaluations:"
+        };
 
-        JOptionPane.showMessageDialog(this, new JScrollPane(area),
-                "Presentation Details", JOptionPane.INFORMATION_MESSAGE);
+        showHtmlDetailsDialog("Presentation Details", sub.getDetails(), labels);
     }
+
+    private void viewMyEvaluationDetails() {
+        int row = myEvalTable.getSelectedRow();
+        if (row == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Please select an evaluation row first.",
+                    "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String subId = (String) myEvalModel.getValueAt(row, 0);
+        Submission sub = dataManager.findSubmissionById(subId);
+        if (sub == null) return;
+
+        Evaluation match = findMyEvaluationForSubmission(sub);
+        if (match == null) return;
+
+        String[] labels = {
+                "Evaluation by:",
+                "Submission:",
+                "Problem Clarity:",
+                "Methodology:",
+                "Results:",
+                "Presentation:",
+                "Total:",
+                "Comments:"
+        };
+
+        showHtmlDetailsDialog("Evaluation Details", match.getDetails(), labels);
+    }
+
+    private void showHtmlDetailsDialog(String title, String plainTextDetails, String[] labelsToBold) {
+        String html = toHtmlWithBoldLabels(plainTextDetails, labelsToBold);
+
+        JEditorPane editor = new JEditorPane("text/html", html);
+        editor.setEditable(false);
+        editor.setOpaque(false);
+        editor.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
+
+        JScrollPane scroll = new JScrollPane(editor);
+        scroll.setPreferredSize(new Dimension(760, 460));
+
+        JOptionPane.showMessageDialog(this, scroll, title, JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private String toHtmlWithBoldLabels(String text, String[] labelsToBold) {
+        String safe = esc(text);
+
+        for (String label : labelsToBold) {
+            String safeLabel = esc(label);
+            safe = safe.replaceAll("(?m)^" + Pattern.quote(safeLabel), "<b>" + safeLabel + "</b>");
+        }
+
+        safe = safe.replace("\n", "<br>");
+
+        return "<html><body style='font-family:Arial; font-size:12pt;'>"
+                + "<div style='white-space:normal; line-height:1.35;'>"
+                + safe
+                + "</div></body></html>";
+    }
+
+    private static String esc(String s) {
+        if (s == null) return "";
+        return s.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;");
+    }
+
+    // =========================================================
+    // OPEN FILE
+    // =========================================================
 
     private void openSelectedPresentationFile() {
         int row = presentationTable.getSelectedRow();
@@ -407,7 +503,6 @@ public class EvaluatorDashboard extends JFrame {
         try {
             File f = new File(path);
 
-            // If student uploaded a relative path accidentally, try it as-is first
             if (!f.exists()) {
                 JOptionPane.showMessageDialog(this,
                         "File not found:\n" + path + "\n\n" +
@@ -491,7 +586,6 @@ public class EvaluatorDashboard extends JFrame {
             clearEvaluateForm();
             loadMyEvaluations();
 
-            // After submit, go back to step 2
             loadPresentationsForSession(selectedSession);
             selectedSubmission = null;
             updateSelectedSubmissionLabel();
@@ -591,31 +685,6 @@ public class EvaluatorDashboard extends JFrame {
         }
     }
 
-    private void viewMyEvaluationDetails() {
-        int row = myEvalTable.getSelectedRow();
-        if (row == -1) {
-            JOptionPane.showMessageDialog(this,
-                    "Please select an evaluation row first.",
-                    "No Selection", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        String subId = (String) myEvalModel.getValueAt(row, 0);
-        Submission sub = dataManager.findSubmissionById(subId);
-        if (sub == null) return;
-
-        Evaluation match = findMyEvaluationForSubmission(sub);
-        if (match != null) {
-            JTextArea area = new JTextArea(match.getDetails(), 16, 60);
-            area.setEditable(false);
-            area.setLineWrap(true);
-            area.setWrapStyleWord(true);
-
-            JOptionPane.showMessageDialog(this, new JScrollPane(area),
-                    "Evaluation Details", JOptionPane.INFORMATION_MESSAGE);
-        }
-    }
-
     private void deleteMyEvaluation() {
         int row = myEvalTable.getSelectedRow();
         if (row == -1) {
@@ -665,5 +734,30 @@ public class EvaluatorDashboard extends JFrame {
             dispose();
             new LoginFrame().setVisible(true);
         }
+    }
+
+    // =========================================================
+    // ARROW + BUTTON STYLE HELPERS
+    // =========================================================
+
+    private void stylePrimaryButton(JButton btn) {
+        btn.setBackground(new Color(52, 152, 219));
+        btn.setForeground(Color.WHITE);
+    }
+
+    private void setArrowButtonText(JButton btn, String baseText, boolean rightArrow) {
+        String arrow = rightArrow ? "\u2192" : "\u2190"; // → or ←
+
+        Font current = btn.getFont();
+        if (current != null && current.canDisplayUpTo(arrow) != -1) {
+            Font alt = new Font("Segoe UI Symbol", current.getStyle(), current.getSize());
+            if (alt.canDisplayUpTo(arrow) == -1) {
+                btn.setFont(alt);
+            } else {
+                arrow = rightArrow ? ">" : "<";
+            }
+        }
+
+        btn.setText(rightArrow ? (baseText + " " + arrow) : (arrow + " " + baseText));
     }
 }
