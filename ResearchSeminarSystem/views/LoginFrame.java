@@ -4,17 +4,12 @@ import data.DataManager;
 import models.*;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.lang.reflect.Method;
 import java.util.List;
 
-/**
- * LoginFrame - Main login interface for the Seminar Management System
- * Updated: Registration no longer asks for Supervisor/Department/Expertise.
- * - Student supervisor will be filled later (e.g., during submission / profile)
- * - Coordinator department removed from registration (single department system)
- * - Evaluator expertise removed from registration (can be filled later)
- */
+// LoginFrame - Main login interface for the Seminar Management System
 public class LoginFrame extends JFrame {
     private JTextField userIdField;
     private JPasswordField passwordField;
@@ -31,97 +26,131 @@ public class LoginFrame extends JFrame {
         // Auto-load saved data if DataManager.loadData() exists
         invokeIfExists(dataManager, "loadData");
 
+        // ✅ Option A: Bigger readable UI fonts
+        applyBiggerUIFont();
+
         initializeUI();
     }
 
     private void initializeUI() {
         setTitle("Seminar Management System - Login");
-        setSize(520, 380);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
+        // =========================
         // Header
-        JPanel headerPanel = new JPanel();
+        // =========================
+        JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBackground(new Color(41, 128, 185));
-        headerPanel.setPreferredSize(new Dimension(520, 80));
-        JLabel titleLabel = new JLabel("Seminar Management System");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
-        titleLabel.setForeground(Color.WHITE);
-        headerPanel.add(titleLabel);
+        headerPanel.setBorder(new EmptyBorder(18, 18, 18, 18));
 
-        // Main
-        JPanel mainPanel = new JPanel(new GridBagLayout());
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
+        JLabel titleLabel = new JLabel("Seminar Management System", SwingConstants.CENTER);
+        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 28f));
+        titleLabel.setForeground(Color.WHITE);
+        headerPanel.add(titleLabel, BorderLayout.CENTER);
+
+        add(headerPanel, BorderLayout.NORTH);
+
+        // =========================
+        // Center wrapper (keeps form centered even on maximize)
+        // =========================
+        JPanel centerWrapper = new JPanel(new GridBagLayout());
+        centerWrapper.setBorder(new EmptyBorder(30, 40, 30, 40));
+        add(centerWrapper, BorderLayout.CENTER);
+
+        // The form itself
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBorder(BorderFactory.createTitledBorder("Login"));
+        formPanel.setPreferredSize(new Dimension(560, 280)); // ✅ prevents tiny look on large screens
+
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.insets = new Insets(12, 12, 12, 12);
 
         // User ID
         gbc.gridx = 0;
         gbc.gridy = 0;
-        gbc.gridwidth = 1;
-        mainPanel.add(new JLabel("User ID:"), gbc);
+        gbc.weightx = 0;
+        formPanel.add(new JLabel("User ID:"), gbc);
 
         gbc.gridx = 1;
-        gbc.gridwidth = 2;
-        userIdField = new JTextField(20);
-        mainPanel.add(userIdField, gbc);
+        gbc.gridy = 0;
+        gbc.weightx = 1; // ✅ allow grow
+        userIdField = new JTextField();
+        formPanel.add(userIdField, gbc);
 
         // Password
         gbc.gridx = 0;
         gbc.gridy = 1;
-        gbc.gridwidth = 1;
-        mainPanel.add(new JLabel("Password:"), gbc);
+        gbc.weightx = 0;
+        formPanel.add(new JLabel("Password:"), gbc);
 
         gbc.gridx = 1;
-        gbc.gridwidth = 2;
-        passwordField = new JPasswordField(20);
-        mainPanel.add(passwordField, gbc);
+        gbc.gridy = 1;
+        gbc.weightx = 1; // ✅ allow grow
+        passwordField = new JPasswordField();
+        formPanel.add(passwordField, gbc);
 
         // Role
         gbc.gridx = 0;
         gbc.gridy = 2;
-        gbc.gridwidth = 1;
-        mainPanel.add(new JLabel("Role:"), gbc);
+        gbc.weightx = 0;
+        formPanel.add(new JLabel("Role:"), gbc);
 
         gbc.gridx = 1;
-        gbc.gridwidth = 2;
+        gbc.gridy = 2;
+        gbc.weightx = 1; // ✅ allow grow
         roleComboBox = new JComboBox<>(new String[]{"Student", "Evaluator", "Coordinator"});
-        mainPanel.add(roleComboBox, gbc);
+        formPanel.add(roleComboBox, gbc);
 
-        // Buttons
-        gbc.gridy = 3;
-        gbc.gridx = 1;
-        gbc.gridwidth = 1;
+        // Buttons row
+        JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 18, 0));
 
         loginButton = new JButton("Login");
         loginButton.setBackground(new Color(46, 204, 113));
         loginButton.setForeground(Color.WHITE);
-        loginButton.setFont(new Font("Arial", Font.BOLD, 14));
         loginButton.addActionListener(e -> performLogin());
-        mainPanel.add(loginButton, gbc);
 
-        gbc.gridx = 2;
         registerButton = new JButton("Register");
         registerButton.setBackground(new Color(52, 152, 219));
         registerButton.setForeground(Color.WHITE);
-        registerButton.setFont(new Font("Arial", Font.BOLD, 14));
         registerButton.addActionListener(e -> openRegisterDialog());
-        mainPanel.add(registerButton, gbc);
 
-        // Small note
+        btnRow.add(loginButton);
+        btnRow.add(registerButton);
+
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.gridwidth = 2;
+        gbc.weightx = 1;
+        formPanel.add(btnRow, gbc);
+
+        // Add formPanel centered in wrapper
+        GridBagConstraints wrap = new GridBagConstraints();
+        wrap.gridx = 0;
+        wrap.gridy = 0;
+        wrap.weightx = 1;
+        wrap.weighty = 1;
+        wrap.anchor = GridBagConstraints.CENTER;
+        wrap.fill = GridBagConstraints.NONE;
+        centerWrapper.add(formPanel, wrap);
+
+        // =========================
+        // Footer note
+        // =========================
         JPanel notePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         JLabel note = new JLabel("New user? Click Register.");
-        note.setFont(new Font("Arial", Font.PLAIN, 12));
+        notePanel.setBorder(new EmptyBorder(6, 6, 16, 6));
         notePanel.add(note);
-
-        add(headerPanel, BorderLayout.NORTH);
-        add(mainPanel, BorderLayout.CENTER);
         add(notePanel, BorderLayout.SOUTH);
 
         // Enter key to login
         passwordField.addActionListener(e -> performLogin());
+
+        // ✅ Use pack + minimum size instead of fixed setSize
+        pack();
+        setMinimumSize(new Dimension(900, 550)); // ✅ not tiny when resized smaller
     }
 
     private void performLogin() {
@@ -157,17 +186,15 @@ public class LoginFrame extends JFrame {
         }
     }
 
-    /**
-     * Registration dialog
-     */
+    // Registration dialog
     private void openRegisterDialog() {
-        // Create a custom dialog so we can remove the Cancel button
         JDialog dialog = new JDialog(this, "Register New User", true);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dialog.setLayout(new BorderLayout(10, 10));
 
         JTextField nameField = new JTextField();
         JTextField emailField = new JTextField();
+        JTextField contactField = new JTextField(); // NEW
         JPasswordField passField = new JPasswordField();
         JPasswordField confirmField = new JPasswordField();
         JComboBox<String> roleBox = new JComboBox<>(new String[]{"Student", "Evaluator", "Coordinator"});
@@ -176,6 +203,7 @@ public class LoginFrame extends JFrame {
         form.setBorder(BorderFactory.createEmptyBorder(15, 15, 10, 15));
         form.add(new JLabel("Name:")); form.add(nameField);
         form.add(new JLabel("Email:")); form.add(emailField);
+        form.add(new JLabel("Contact No:")); form.add(contactField); // NEW
         form.add(new JLabel("Password:")); form.add(passField);
         form.add(new JLabel("Confirm Password:")); form.add(confirmField);
         form.add(new JLabel("Role:")); form.add(roleBox);
@@ -184,13 +212,23 @@ public class LoginFrame extends JFrame {
         okBtn.addActionListener(e -> {
             String name = nameField.getText().trim();
             String email = emailField.getText().trim();
+            String contact = contactField.getText().trim(); // NEW
             String password = new String(passField.getPassword()).trim();
             String confirm = new String(confirmField.getPassword()).trim();
             String role = (String) roleBox.getSelectedItem();
 
-            if (name.isEmpty() || email.isEmpty() || password.isEmpty() || confirm.isEmpty()) {
+            if (name.isEmpty() || email.isEmpty() || contact.isEmpty() || password.isEmpty() || confirm.isEmpty()) {
                 JOptionPane.showMessageDialog(dialog,
                         "Please fill in all required fields.",
+                        "Validation Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Simple phone validation (adjust if you want stricter rules)
+            if (!contact.matches("[0-9+()\\-\\s]{7,20}")) {
+                JOptionPane.showMessageDialog(dialog,
+                        "Please enter a valid contact number (digits and + - ( ) only).",
                         "Validation Error",
                         JOptionPane.ERROR_MESSAGE);
                 return;
@@ -207,17 +245,25 @@ public class LoginFrame extends JFrame {
             String newId = generateNextUserId(role);
 
             try {
+                User createdUser;
+
                 if ("Student".equals(role)) {
-                    dataManager.addStudent(new Student(newId, name, email, password, ""));
-                    // If you have a 4-arg constructor, use:
-                    // dataManager.addStudent(new Student(newId, name, email, password));
+                    Student s = new Student(newId, name, email, password, "");
+                    createdUser = s;
+                    dataManager.addStudent(s);
+
                 } else if ("Evaluator".equals(role)) {
-                    dataManager.addEvaluator(new Evaluator(newId, name, email, password, ""));
-                    // dataManager.addEvaluator(new Evaluator(newId, name, email, password));
+                    Evaluator ev = new Evaluator(newId, name, email, password, "");
+                    createdUser = ev;
+                    dataManager.addEvaluator(ev);
+
                 } else { // Coordinator
-                    dataManager.addCoordinator(new Coordinator(newId, name, email, password, ""));
-                    // dataManager.addCoordinator(new Coordinator(newId, name, email, password));
+                    Coordinator c = new Coordinator(newId, name, email, password, "");
+                    createdUser = c;
+                    dataManager.addCoordinator(c);
                 }
+
+                setContactIfPossible(createdUser, contact);
 
                 invokeIfExists(dataManager, "saveData");
 
@@ -231,7 +277,7 @@ public class LoginFrame extends JFrame {
                 passwordField.setText(password);
                 roleComboBox.setSelectedItem(role);
 
-                dialog.dispose(); // close after success
+                dialog.dispose();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(dialog,
                         "Registration failed: " + ex.getMessage(),
@@ -240,7 +286,6 @@ public class LoginFrame extends JFrame {
             }
         });
 
-        // Bottom button panel (OK only)
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         btnPanel.add(okBtn);
 
@@ -248,12 +293,22 @@ public class LoginFrame extends JFrame {
         dialog.add(btnPanel, BorderLayout.SOUTH);
 
         dialog.pack();
+        dialog.setMinimumSize(new Dimension(520, 360)); // ✅ not tiny dialog
         dialog.setLocationRelativeTo(this);
-
-        // Optional: pressing Enter triggers OK
         dialog.getRootPane().setDefaultButton(okBtn);
-
         dialog.setVisible(true);
+    }
+
+    // Tries to set contact number on the user object without breaking compilation
+    private static void setContactIfPossible(Object userObj, String contact) {
+        if (userObj == null) return;
+
+        String[] setterNames = {"setContactNumber", "setPhoneNumber", "setContactNo", "setPhone"};
+        for (String setter : setterNames) {
+            if (invokeIfExistsWithArg(userObj, setter, String.class, contact)) {
+                return;
+            }
+        }
     }
 
     /**
@@ -276,13 +331,11 @@ public class LoginFrame extends JFrame {
                 String id = u.getUserId().trim().toUpperCase();
 
                 if (id.startsWith(prefix)) {
-                    String numPart = id.substring(1); // after prefix
+                    String numPart = id.substring(1);
                     try {
                         int n = Integer.parseInt(numPart);
                         if (n > max) max = n;
-                    } catch (NumberFormatException ignored) {
-                        // ignore non-numeric IDs
-                    }
+                    } catch (NumberFormatException ignored) { }
                 }
             }
         }
@@ -301,8 +354,22 @@ public class LoginFrame extends JFrame {
         }
     }
 
+    // ✅ Option A: bigger base UI fonts for large screens
+    private void applyBiggerUIFont() {
+        Font f = new Font("Arial", Font.PLAIN, 16);
+
+        UIManager.put("Label.font", f);
+        UIManager.put("TextField.font", f);
+        UIManager.put("PasswordField.font", f);
+        UIManager.put("ComboBox.font", f);
+        UIManager.put("Button.font", f.deriveFont(Font.BOLD));
+        UIManager.put("TitledBorder.font", f.deriveFont(Font.BOLD));
+        UIManager.put("OptionPane.messageFont", f);
+        UIManager.put("OptionPane.buttonFont", f.deriveFont(Font.BOLD));
+    }
+
     /**
-     * Calls a no-arg method if it exists (so your project still compiles even if you haven't added it yet).
+     * Calls a no-arg method if it exists.
      * Example: DataManager.saveData(), DataManager.loadData()
      */
     private static void invokeIfExists(Object target, String methodName) {
@@ -310,10 +377,24 @@ public class LoginFrame extends JFrame {
             Method m = target.getClass().getMethod(methodName);
             m.invoke(target);
         } catch (NoSuchMethodException ignored) {
-            // method doesn't exist (yet) -> do nothing
         } catch (Exception ex) {
-            // method exists but failed -> show in console only
             System.err.println("Failed calling " + methodName + "(): " + ex.getMessage());
+        }
+    }
+
+    /**
+     * Calls a 1-arg method if it exists; returns true if it was found and called successfully.
+     */
+    private static boolean invokeIfExistsWithArg(Object target, String methodName, Class<?> argType, Object argValue) {
+        try {
+            Method m = target.getClass().getMethod(methodName, argType);
+            m.invoke(target, argValue);
+            return true;
+        } catch (NoSuchMethodException ignored) {
+            return false;
+        } catch (Exception ex) {
+            System.err.println("Failed calling " + methodName + "(): " + ex.getMessage());
+            return false;
         }
     }
 

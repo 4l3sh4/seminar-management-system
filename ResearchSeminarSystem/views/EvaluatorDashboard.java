@@ -6,62 +6,84 @@ import models.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.Desktop;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
-/**
- * EvaluatorDashboard - Interface for evaluators to view assigned submissions and submit evaluations
- */
+// Evaluator Dashboard
 public class EvaluatorDashboard extends JFrame {
-    private Evaluator evaluator;
-    private DataManager dataManager;
+    private final Evaluator evaluator;
+    private final DataManager dataManager;
 
-    private JTable assignedTable;
-    private DefaultTableModel assignedModel;
+    // Wizard (Sessions) cards
+    private CardLayout wizardLayout;
+    private JPanel wizardPanel;
 
-    private JTable myEvalTable;
-    private DefaultTableModel myEvalModel;
+    // Step 1
+    private JTable sessionTable;
+    private DefaultTableModel sessionModel;
 
-    // Evaluate tab fields
-    private JComboBox<Submission> submissionCombo;
+    // Step 2
+    private JTable presentationTable;
+    private DefaultTableModel presentationModel;
+
+    // Step 3
+    private JLabel selectedSubmissionLabel;
     private JSlider claritySlider, methodologySlider, resultsSlider, presentationSlider;
     private JTextArea commentArea;
+
+    // State
+    private Session selectedSession;
+    private Submission selectedSubmission;
+
+    // Evaluations tab
+    private JTable myEvalTable;
+    private DefaultTableModel myEvalModel;
 
     public EvaluatorDashboard(Evaluator evaluator) {
         this.evaluator = evaluator;
         this.dataManager = DataManager.getInstance();
+
         initializeUI();
-        loadAssignedSubmissions();
+
+        loadMySessions();
         loadMyEvaluations();
+
+        showStep("STEP1");
     }
 
     private void initializeUI() {
         setTitle("Evaluator Dashboard - " + evaluator.getName());
-        setSize(950, 600);
+        setSize(1050, 650);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
         // Header
         JPanel headerPanel = new JPanel();
-        headerPanel.setBackground(new Color(155, 89, 182)); // purple-ish
-        headerPanel.setPreferredSize(new Dimension(950, 60));
+        headerPanel.setBackground(new Color(155, 89, 182));
+        headerPanel.setPreferredSize(new Dimension(1050, 60));
         JLabel headerLabel = new JLabel("Evaluator Dashboard - " + evaluator.getName());
         headerLabel.setFont(new Font("Arial", Font.BOLD, 18));
         headerLabel.setForeground(Color.WHITE);
         headerPanel.add(headerLabel);
 
         // Tabs
-        JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.addTab("Assigned Presentations", createAssignedPanel());
-        tabbedPane.addTab("Evaluate", createEvaluatePanel());
-        tabbedPane.addTab("My Evaluations", createMyEvaluationsPanel());
+        JTabbedPane tabs = new JTabbedPane();
+        tabs.addTab("Sessions", createWizardMySessionsPanel());
+        tabs.addTab("Evaluations", createMyEvaluationsPanel());
 
         // Bottom
         JPanel bottomPanel = new JPanel();
         JButton refreshButton = new JButton("Refresh");
         refreshButton.addActionListener(e -> {
-            loadAssignedSubmissions();
+            loadMySessions();
             loadMyEvaluations();
-            reloadSubmissionCombo();
+
+            if (selectedSession != null) {
+                loadPresentationsForSession(selectedSession);
+            }
         });
 
         JButton logoutButton = new JButton("Logout");
@@ -71,55 +93,152 @@ public class EvaluatorDashboard extends JFrame {
         bottomPanel.add(logoutButton);
 
         add(headerPanel, BorderLayout.NORTH);
-        add(tabbedPane, BorderLayout.CENTER);
+        add(tabs, BorderLayout.CENTER);
         add(bottomPanel, BorderLayout.SOUTH);
     }
 
-    private JPanel createAssignedPanel() {
-        JPanel panel = new JPanel(new BorderLayout(10,10));
-        panel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+    // =========================================================
+    // WIZARD PANEL (Sessions)
+    // =========================================================
 
-        String[] columns = {"ID", "Title", "Type", "Student", "File", "Avg Score", "Evaluations"};
-        assignedModel = new DefaultTableModel(columns, 0) {
+    private JPanel createWizardMySessionsPanel() {
+        JPanel root = new JPanel(new BorderLayout());
+        root.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        wizardLayout = new CardLayout();
+        wizardPanel = new JPanel(wizardLayout);
+
+        wizardPanel.add(createStep1Panel(), "STEP1");
+        wizardPanel.add(createStep2Panel(), "STEP2");
+        wizardPanel.add(createStep3Panel(), "STEP3");
+
+        root.add(wizardPanel, BorderLayout.CENTER);
+        return root;
+    }
+
+    private JPanel createStep1Panel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(BorderFactory.createTitledBorder("Select a Session"));
+
+        String[] cols = {"Session ID", "Date", "Venue", "Type", "No. Presentations"};
+        sessionModel = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
+        sessionTable = new JTable(sessionModel);
+        panel.add(new JScrollPane(sessionTable), BorderLayout.CENTER);
 
-        assignedTable = new JTable(assignedModel);
-        panel.add(new JScrollPane(assignedTable), BorderLayout.CENTER);
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
-        JPanel btnPanel = new JPanel();
+        JButton nextBtn = new JButton("Next \u2192");
+        nextBtn.setBackground(new Color(52, 152, 219));
+        nextBtn.setForeground(Color.WHITE);
+
+        nextBtn.addActionListener(e -> {
+            int row = sessionTable.getSelectedRow();
+            if (row == -1) {
+                JOptionPane.showMessageDialog(this,
+                        "Please select a session first.",
+                        "No Selection", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            String sessionId = (String) sessionModel.getValueAt(row, 0);
+            selectedSession = dataManager.findSessionById(sessionId);
+            selectedSubmission = null;
+
+            if (selectedSession == null) return;
+
+            loadPresentationsForSession(selectedSession);
+            showStep("STEP2");
+        });
+
+        btnPanel.add(nextBtn);
+        panel.add(btnPanel, BorderLayout.SOUTH);
+
+        return panel;
+    }
+
+    private JPanel createStep2Panel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(BorderFactory.createTitledBorder("Choose a Presentation"));
+
+        //Board ID column
+        String[] cols = {"Submission ID", "Title", "Type", "Board ID", "Student", "File", "Avg Score", "No. Evaluations"};
+        presentationModel = new DefaultTableModel(cols, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
+        };
+        presentationTable = new JTable(presentationModel);
+        panel.add(new JScrollPane(presentationTable), BorderLayout.CENTER);
+
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+
+        JButton backBtn = new JButton("\u2190 Back");
+        backBtn.addActionListener(e -> showStep("STEP1"));
+
         JButton viewBtn = new JButton("View Details");
-        viewBtn.addActionListener(e -> viewAssignedDetails());
+        viewBtn.addActionListener(e -> viewPresentationDetails());
 
-        JButton evaluateBtn = new JButton("Evaluate Selected");
-        evaluateBtn.addActionListener(e -> moveSelectedToEvaluateTab());
+        JButton openFileBtn = new JButton("Open File");
+        openFileBtn.addActionListener(e -> openSelectedPresentationFile());
 
+        JButton nextBtn = new JButton("Next \u2192");
+        nextBtn.setBackground(new Color(52, 152, 219));
+        nextBtn.setForeground(Color.WHITE);
+        nextBtn.addActionListener(e -> {
+            int row = presentationTable.getSelectedRow();
+            if (row == -1) {
+                JOptionPane.showMessageDialog(this,
+                        "Please select a presentation first.",
+                        "No Selection", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            String subId = (String) presentationModel.getValueAt(row, 0);
+            selectedSubmission = dataManager.findSubmissionById(subId);
+
+            if (selectedSubmission == null) return;
+
+            // Block if already evaluated by this evaluator
+            if (findMyEvaluationForSubmission(selectedSubmission) != null) {
+                JOptionPane.showMessageDialog(this,
+                        "You already evaluated this submission.\n" +
+                                "Delete your evaluation first (Evaluations tab) to re-evaluate.",
+                        "Already Evaluated", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            updateSelectedSubmissionLabel();
+            clearEvaluateForm();
+            showStep("STEP3");
+        });
+
+        btnPanel.add(backBtn);
         btnPanel.add(viewBtn);
-        btnPanel.add(evaluateBtn);
+        btnPanel.add(openFileBtn);
+        btnPanel.add(nextBtn);
 
         panel.add(btnPanel, BorderLayout.SOUTH);
 
         return panel;
     }
 
-    private JPanel createEvaluatePanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
+    private JPanel createStep3Panel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(BorderFactory.createTitledBorder("Evaluate"));
 
+        JPanel form = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(10,10,10,10);
+        gbc.insets = new Insets(8, 10, 8, 10);
 
-        // Select submission
         gbc.gridx = 0; gbc.gridy = 0;
-        panel.add(new JLabel("Select Submission:"), gbc);
+        form.add(new JLabel("Selected Submission:"), gbc);
 
-        gbc.gridx = 1; gbc.gridwidth = 2;
-        submissionCombo = new JComboBox<>();
-        reloadSubmissionCombo();
-        panel.add(submissionCombo, gbc);
+        gbc.gridx = 1; gbc.gridy = 0; gbc.gridwidth = 2;
+        selectedSubmissionLabel = new JLabel("(none)");
+        selectedSubmissionLabel.setFont(new Font("Arial", Font.BOLD, 12));
+        form.add(selectedSubmissionLabel, gbc);
 
-        // Sliders
         claritySlider = createRubricSlider();
         methodologySlider = createRubricSlider();
         resultsSlider = createRubricSlider();
@@ -127,45 +246,300 @@ public class EvaluatorDashboard extends JFrame {
 
         gbc.gridwidth = 1;
         gbc.gridx = 0; gbc.gridy = 1;
-        panel.add(new JLabel("Problem Clarity:"), gbc);
+        form.add(new JLabel("Problem Clarity:"), gbc);
         gbc.gridx = 1; gbc.gridwidth = 2;
-        panel.add(claritySlider, gbc);
+        form.add(claritySlider, gbc);
 
         gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 1;
-        panel.add(new JLabel("Methodology:"), gbc);
+        form.add(new JLabel("Methodology:"), gbc);
         gbc.gridx = 1; gbc.gridwidth = 2;
-        panel.add(methodologySlider, gbc);
+        form.add(methodologySlider, gbc);
 
         gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 1;
-        panel.add(new JLabel("Results:"), gbc);
+        form.add(new JLabel("Results:"), gbc);
         gbc.gridx = 1; gbc.gridwidth = 2;
-        panel.add(resultsSlider, gbc);
+        form.add(resultsSlider, gbc);
 
         gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 1;
-        panel.add(new JLabel("Presentation:"), gbc);
+        form.add(new JLabel("Presentation:"), gbc);
         gbc.gridx = 1; gbc.gridwidth = 2;
-        panel.add(presentationSlider, gbc);
+        form.add(presentationSlider, gbc);
 
-        // Comment
         gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 1;
-        panel.add(new JLabel("Comments:"), gbc);
+        form.add(new JLabel("Comments:"), gbc);
 
         gbc.gridx = 1; gbc.gridwidth = 2;
         commentArea = new JTextArea(5, 30);
         commentArea.setLineWrap(true);
         commentArea.setWrapStyleWord(true);
-        panel.add(new JScrollPane(commentArea), gbc);
+        form.add(new JScrollPane(commentArea), gbc);
 
-        // Submit
-        gbc.gridx = 1; gbc.gridy = 6; gbc.gridwidth = 2;
+        panel.add(form, BorderLayout.CENTER);
+
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+
+        JButton backBtn = new JButton("\u2190 Back");
+        backBtn.addActionListener(e -> showStep("STEP2"));
+
         JButton submitBtn = new JButton("Submit Evaluation");
         submitBtn.setBackground(new Color(46, 204, 113));
         submitBtn.setForeground(Color.WHITE);
         submitBtn.addActionListener(e -> submitEvaluation());
-        panel.add(submitBtn, gbc);
+
+        btnPanel.add(backBtn);
+        btnPanel.add(submitBtn);
+
+        panel.add(btnPanel, BorderLayout.SOUTH);
 
         return panel;
     }
+
+    private void showStep(String stepName) {
+        wizardLayout.show(wizardPanel, stepName);
+    }
+
+    // =========================================================
+    // DATA LOADING
+    // =========================================================
+
+    private void loadMySessions() {
+        sessionModel.setRowCount(0);
+        for (Session s : getMySessionsForEvaluator()) {
+            int count = (s.getSubmissions() == null) ? 0 : s.getSubmissions().size();
+            sessionModel.addRow(new Object[]{
+                    s.getSessionId(), s.getDate(), s.getVenue(), s.getSessionType(), count
+            });
+        }
+    }
+
+    private List<Session> getMySessionsForEvaluator() {
+        List<Session> result = new ArrayList<>();
+        String myId = evaluator.getUserId();
+
+        for (Session s : dataManager.getSessions()) {
+            if (s == null) continue;
+            if (isEvaluatorInSession(s, myId)) result.add(s);
+        }
+        return result;
+    }
+
+    private boolean isEvaluatorInSession(Session session, String evaluatorId) {
+        if (session == null || evaluatorId == null) return false;
+        List<Evaluator> evals = session.getEvaluators();
+        if (evals == null) return false;
+
+        for (Evaluator e : evals) {
+            if (e != null && evaluatorId.equals(e.getUserId())) return true;
+        }
+        return false;
+    }
+
+    private void loadPresentationsForSession(Session session) {
+        presentationModel.setRowCount(0);
+        if (session == null || session.getSubmissions() == null) return;
+
+        for (Submission sub : session.getSubmissions()) {
+            if (sub == null) continue;
+
+            String type = sub.getPresentationType();
+            String boardDisplay = "N/A";
+            if ("Poster".equalsIgnoreCase(type)) {
+                boardDisplay = (sub.getBoardId() != null && !sub.getBoardId().trim().isEmpty())
+                        ? sub.getBoardId()
+                        : "(Not assigned)";
+            }
+
+            presentationModel.addRow(new Object[]{
+                    sub.getSubmissionId(),
+                    sub.getTitle(),
+                    type,
+                    boardDisplay,
+                    safeStudentName(sub),
+                    (sub.getFilePath() == null || sub.getFilePath().isEmpty()) ? "Not uploaded" : "Uploaded",
+                    String.format("%.2f", sub.getAverageScore()),
+                    (sub.getEvaluations() == null ? 0 : sub.getEvaluations().size())
+            });
+        }
+    }
+
+    private void viewPresentationDetails() {
+        int row = presentationTable.getSelectedRow();
+        if (row == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Select a presentation first.",
+                    "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        String subId = (String) presentationModel.getValueAt(row, 0);
+        Submission sub = dataManager.findSubmissionById(subId);
+        if (sub == null) return;
+
+        JTextArea area = new JTextArea(sub.getDetails(), 18, 60);
+        area.setEditable(false);
+        area.setLineWrap(true);
+        area.setWrapStyleWord(true);
+
+        JOptionPane.showMessageDialog(this, new JScrollPane(area),
+                "Presentation Details", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void openSelectedPresentationFile() {
+        int row = presentationTable.getSelectedRow();
+        if (row == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Select a presentation first.",
+                    "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String subId = (String) presentationModel.getValueAt(row, 0);
+        Submission sub = dataManager.findSubmissionById(subId);
+        if (sub == null) return;
+
+        String path = (sub.getFilePath() == null) ? "" : sub.getFilePath().trim();
+        if (path.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "No file uploaded for this submission.",
+                    "No File", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        try {
+            File f = new File(path);
+
+            // If student uploaded a relative path accidentally, try it as-is first
+            if (!f.exists()) {
+                JOptionPane.showMessageDialog(this,
+                        "File not found:\n" + path + "\n\n" +
+                                "Tip: The saved filePath must point to a real file on this computer.",
+                        "File Missing", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (!Desktop.isDesktopSupported()) {
+                JOptionPane.showMessageDialog(this,
+                        "Desktop open is not supported on this system.",
+                        "Not Supported", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            Desktop.getDesktop().open(f);
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Failed to open file: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // =========================================================
+    // EVALUATION RULE: ONE EVALUATION PER EVALUATOR PER SUBMISSION
+    // =========================================================
+
+    private Evaluation findMyEvaluationForSubmission(Submission sub) {
+        if (sub == null || sub.getEvaluations() == null) return null;
+        String myId = evaluator.getUserId();
+
+        for (Evaluation ev : sub.getEvaluations()) {
+            if (ev != null && myId.equals(ev.getEvaluatorId())) return ev;
+        }
+        return null;
+    }
+
+    private void submitEvaluation() {
+        if (selectedSession == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Please select a session first.",
+                    "No Session", JOptionPane.WARNING_MESSAGE);
+            showStep("STEP1");
+            return;
+        }
+
+        if (selectedSubmission == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Please select a presentation first.",
+                    "No Presentation", JOptionPane.WARNING_MESSAGE);
+            showStep("STEP2");
+            return;
+        }
+
+        if (findMyEvaluationForSubmission(selectedSubmission) != null) {
+            JOptionPane.showMessageDialog(this,
+                    "You already evaluated this submission.\n" +
+                            "Delete your evaluation first (Evaluations tab) to re-evaluate.",
+                    "Already Evaluated", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int clarity = claritySlider.getValue();
+        int methodology = methodologySlider.getValue();
+        int results = resultsSlider.getValue();
+        int presentation = presentationSlider.getValue();
+        String comments = commentArea.getText().trim();
+
+        try {
+            Evaluation evaluation = evaluator.evaluateSubmission(
+                    selectedSubmission, clarity, methodology, results, presentation, comments
+            );
+
+            dataManager.addEvaluation(evaluation);
+
+            JOptionPane.showMessageDialog(this,
+                    "Evaluation submitted successfully!",
+                    "Success", JOptionPane.INFORMATION_MESSAGE);
+
+            clearEvaluateForm();
+            loadMyEvaluations();
+
+            // After submit, go back to step 2
+            loadPresentationsForSession(selectedSession);
+            selectedSubmission = null;
+            updateSelectedSubmissionLabel();
+            showStep("STEP2");
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Failed to submit evaluation: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void updateSelectedSubmissionLabel() {
+        if (selectedSubmission == null) {
+            selectedSubmissionLabel.setText("(none)");
+        } else {
+            selectedSubmissionLabel.setText(
+                    selectedSubmission.getSubmissionId() + " - " + selectedSubmission.getTitle()
+                            + " (" + selectedSubmission.getPresentationType() + ")"
+            );
+        }
+    }
+
+    private void clearEvaluateForm() {
+        if (claritySlider != null) claritySlider.setValue(5);
+        if (methodologySlider != null) methodologySlider.setValue(5);
+        if (resultsSlider != null) resultsSlider.setValue(5);
+        if (presentationSlider != null) presentationSlider.setValue(5);
+        if (commentArea != null) commentArea.setText("");
+    }
+
+    private JSlider createRubricSlider() {
+        JSlider s = new JSlider(0, 10, 5);
+        s.setMajorTickSpacing(2);
+        s.setMinorTickSpacing(1);
+        s.setPaintTicks(true);
+        s.setPaintLabels(true);
+        return s;
+    }
+
+    private String safeStudentName(Submission sub) {
+        try { return sub.getStudent().getName(); }
+        catch (Exception e) { return "Unknown"; }
+    }
+
+    // =========================================================
+    // EVALUATIONS TAB (includes delete)
+    // =========================================================
 
     private JPanel createMyEvaluationsPanel() {
         JPanel panel = new JPanel(new BorderLayout(10,10));
@@ -180,148 +554,38 @@ public class EvaluatorDashboard extends JFrame {
         panel.add(new JScrollPane(myEvalTable), BorderLayout.CENTER);
 
         JPanel btnPanel = new JPanel();
+
         JButton viewBtn = new JButton("View Evaluation Details");
         viewBtn.addActionListener(e -> viewMyEvaluationDetails());
+
+        JButton deleteBtn = new JButton("Delete Evaluation");
+        deleteBtn.setBackground(new Color(231, 76, 60));
+        deleteBtn.setForeground(Color.WHITE);
+        deleteBtn.addActionListener(e -> deleteMyEvaluation());
+
         btnPanel.add(viewBtn);
+        btnPanel.add(deleteBtn);
 
         panel.add(btnPanel, BorderLayout.SOUTH);
 
         return panel;
     }
 
-    private void loadAssignedSubmissions() {
-        assignedModel.setRowCount(0);
-
-        for (Submission sub : dataManager.getSubmissions()) {
-            assignedModel.addRow(new Object[]{
-                    sub.getSubmissionId(),
-                    sub.getTitle(),
-                    sub.getPresentationType(),
-                    safeStudentName(sub),
-                    sub.getFilePath().isEmpty() ? "Not uploaded" : "Uploaded",
-                    String.format("%.2f", sub.getAverageScore()),
-                    sub.getEvaluations().size()
-            });
-        }
-    }
-
-    private void reloadSubmissionCombo() {
-        if (submissionCombo == null) return;
-        submissionCombo.removeAllItems();
-
-        for (Submission sub : dataManager.getSubmissions()) {
-            submissionCombo.addItem(sub);
-        }
-
-        submissionCombo.setRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
-                                                          boolean isSelected, boolean cellHasFocus) {
-                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if (value instanceof Submission) {
-                    Submission s = (Submission) value;
-                    setText(s.getSubmissionId() + " - " + s.getTitle() + " (" + s.getPresentationType() + ")");
-                }
-                return this;
-            }
-        });
-    }
-
     private void loadMyEvaluations() {
         myEvalModel.setRowCount(0);
 
-        String evalId = evaluator.getUserId();
+        String myId = evaluator.getUserId();
         for (Submission sub : dataManager.getSubmissions()) {
+            if (sub == null || sub.getEvaluations() == null) continue;
+
             for (Evaluation ev : sub.getEvaluations()) {
-                if (safeEvaluatorId(ev).equals(evalId)) {
+                if (ev != null && myId.equals(ev.getEvaluatorId())) {
                     myEvalModel.addRow(new Object[]{
                             sub.getSubmissionId(),
                             sub.getTitle(),
-                            safeTotal(ev),
-                            safeComment(ev)
+                            ev.getTotalScore(),
+                            shorten(ev.getComments(), 35)
                     });
-                }
-            }
-        }
-    }
-
-    private void submitEvaluation() {
-        Submission selected = (Submission) submissionCombo.getSelectedItem();
-        if (selected == null) {
-            JOptionPane.showMessageDialog(this, "Please select a submission first.",
-                    "No Selection", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        int clarity = claritySlider.getValue();
-        int methodology = methodologySlider.getValue();
-        int results = resultsSlider.getValue();
-        int presentation = presentationSlider.getValue();
-        String comments = commentArea.getText().trim();
-
-        try {
-            Evaluation evaluation = evaluator.evaluateSubmission(
-                    selected, clarity, methodology, results, presentation, comments
-            );
-
-            dataManager.addEvaluation(evaluation);
-
-            JOptionPane.showMessageDialog(this, "Evaluation submitted successfully!",
-                    "Success", JOptionPane.INFORMATION_MESSAGE);
-
-            // reset
-            claritySlider.setValue(5);
-            methodologySlider.setValue(5);
-            resultsSlider.setValue(5);
-            presentationSlider.setValue(5);
-            commentArea.setText("");
-
-            // refresh
-            loadAssignedSubmissions();
-            loadMyEvaluations();
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Failed to submit evaluation: " + ex.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void viewAssignedDetails() {
-        int row = assignedTable.getSelectedRow();
-        if (row == -1) {
-            JOptionPane.showMessageDialog(this, "Please select a submission.",
-                    "No Selection", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        String subId = (String) assignedModel.getValueAt(row, 0);
-        Submission target = findSubmissionById(subId);
-
-        if (target != null) {
-            JOptionPane.showMessageDialog(this, target.getDetails(),
-                    "Submission Details", JOptionPane.INFORMATION_MESSAGE);
-        }
-    }
-
-    private void moveSelectedToEvaluateTab() {
-        int row = assignedTable.getSelectedRow();
-        if (row == -1) {
-            JOptionPane.showMessageDialog(this, "Please select a submission.",
-                    "No Selection", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        String subId = (String) assignedModel.getValueAt(row, 0);
-        Submission target = findSubmissionById(subId);
-
-        if (target != null) {
-            submissionCombo.setSelectedItem(target);
-
-            // jump to Evaluate tab
-            Container c = getContentPane();
-            for (Component comp : c.getComponents()) {
-                if (comp instanceof JTabbedPane) {
-                    ((JTabbedPane) comp).setSelectedIndex(1);
-                    break;
                 }
             }
         }
@@ -330,71 +594,65 @@ public class EvaluatorDashboard extends JFrame {
     private void viewMyEvaluationDetails() {
         int row = myEvalTable.getSelectedRow();
         if (row == -1) {
-            JOptionPane.showMessageDialog(this, "Please select an evaluation row.",
+            JOptionPane.showMessageDialog(this,
+                    "Please select an evaluation row first.",
                     "No Selection", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         String subId = (String) myEvalModel.getValueAt(row, 0);
-        Submission sub = findSubmissionById(subId);
+        Submission sub = dataManager.findSubmissionById(subId);
         if (sub == null) return;
 
-        String evalId = evaluator.getUserId();
-        Evaluation match = null;
-
-        for (Evaluation ev : sub.getEvaluations()) {
-            if (safeEvaluatorId(ev).equals(evalId)) {
-                match = ev;
-                break;
-            }
-        }
-
+        Evaluation match = findMyEvaluationForSubmission(sub);
         if (match != null) {
-            JOptionPane.showMessageDialog(this, match.getDetails(),
+            JTextArea area = new JTextArea(match.getDetails(), 16, 60);
+            area.setEditable(false);
+            area.setLineWrap(true);
+            area.setWrapStyleWord(true);
+
+            JOptionPane.showMessageDialog(this, new JScrollPane(area),
                     "Evaluation Details", JOptionPane.INFORMATION_MESSAGE);
-        } else {
-            JOptionPane.showMessageDialog(this, "Could not find the evaluation object.",
-                    "Not Found", JOptionPane.WARNING_MESSAGE);
         }
     }
 
-    private Submission findSubmissionById(String id) {
-        for (Submission s : dataManager.getSubmissions()) {
-            if (s.getSubmissionId().equals(id)) return s;
+    private void deleteMyEvaluation() {
+        int row = myEvalTable.getSelectedRow();
+        if (row == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Please select an evaluation row first.",
+                    "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
         }
-        return null;
+
+        String subId = (String) myEvalModel.getValueAt(row, 0);
+        Submission sub = dataManager.findSubmissionById(subId);
+        if (sub == null) return;
+
+        Evaluation myEval = findMyEvaluationForSubmission(sub);
+        if (myEval == null) return;
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Delete your evaluation for " + subId + "?\nYou can evaluate again after deletion.",
+                "Confirm Delete",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirm != JOptionPane.YES_OPTION) return;
+
+        sub.getEvaluations().remove(myEval);
+        dataManager.removeEvaluation(myEval);
+        dataManager.saveToDisk();
+
+        loadMyEvaluations();
+
+        if (selectedSession != null) loadPresentationsForSession(selectedSession);
     }
 
-    private JSlider createRubricSlider() {
-        JSlider s = new JSlider(0, 10, 5);
-        s.setMajorTickSpacing(2);
-        s.setMinorTickSpacing(1);
-        s.setPaintTicks(true);
-        s.setPaintLabels(true);
-        return s;
-    }
-
-    private String safeStudentName(Submission sub) {
-        try {
-            return sub.getStudent().getName();
-        } catch (Exception e) {
-            return "Unknown";
-        }
-    }
-
-    private String safeEvaluatorId(Evaluation ev) {
-        try { return ev.getEvaluatorId(); }
-        catch (Exception e) { return ""; }
-    }
-
-    private int safeTotal(Evaluation ev) {
-        try { return ev.getTotalScore(); }
-        catch (Exception e) { return 0; }
-    }
-
-    private String safeComment(Evaluation ev) {
-        try { return ev.getComments(); }
-        catch (Exception e) { return ""; }
+    private String shorten(String text, int max) {
+        if (text == null) return "";
+        String t = text.trim();
+        if (t.length() <= max) return t;
+        return t.substring(0, max) + "...";
     }
 
     private void logout() {
