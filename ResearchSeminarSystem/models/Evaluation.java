@@ -111,11 +111,14 @@ public class Evaluation implements Serializable {
         return (getTotalScore() / 40.0) * 100.0;
     }
 
-    public String getDetails() {
+     public String getDetails() {
         String evaluatorName = (evaluator != null) ? evaluator.getName() : "Unknown Evaluator";
         String submissionTitle = (submission != null) ? submission.getTitle() : "Unknown Submission";
         String safeComments = (comments != null) ? comments : "";
-
+    
+        // wrap long comments so JOptionPane doesn't show 1 super long line
+        String wrappedComments = wrapText(safeComments, 80); // 80 chars per line (change if you want)
+    
         return String.format(
                 "Evaluation by: %s\n" +
                 "Submission: %s\n" +
@@ -124,12 +127,41 @@ public class Evaluation implements Serializable {
                 "Results: %d/10\n" +
                 "Presentation: %d/10\n" +
                 "Total: %d/40 (%.2f%%)\n" +
-                "Comments: %s",
+                "Comments:\n%s",
                 evaluatorName,
                 submissionTitle,
                 problemClarity, methodology, results, presentation,
-                getTotalScore(), getPercentage(), safeComments
+                getTotalScore(), getPercentage(),
+                wrappedComments
         );
+    }
+    
+    private String wrapText(String text, int maxCharsPerLine) {
+        if (text == null) return "";
+        if (maxCharsPerLine <= 0) return text;
+
+        StringBuilder sb = new StringBuilder();
+        int count = 0;
+
+        for (int i = 0; i < text.length(); i++) {
+            char ch = text.charAt(i);
+            sb.append(ch);
+
+            // reset on manual newline
+            if (ch == '\n') {
+                count = 0;
+                continue;
+            }
+
+            count++;
+
+            // force break even if no spaces (fixes KKKKKKKKK...)
+            if (count >= maxCharsPerLine) {
+                sb.append('\n');
+                count = 0;
+            }
+        }
+        return sb.toString();
     }
 
     @Override
