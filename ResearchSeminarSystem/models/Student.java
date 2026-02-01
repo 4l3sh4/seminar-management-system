@@ -4,7 +4,10 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-// Student class - represents a presenter in the seminar
+/**
+ * Student class - represents a presenter in the seminar
+ * Updated for persistence (Serializable)
+ */
 public class Student extends User implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -26,45 +29,24 @@ public class Student extends User implements Serializable {
     }
 
     public List<Submission> getSubmissions() {
-        if (submissions == null) submissions = new ArrayList<>();
         return submissions;
     }
 
-    public Submission registerSubmission(String title, String abstractText, String supervisorName,
-                                         String presentationType, String filePath) {
-
-        String submissionId = "SUB" + System.currentTimeMillis();
-
-        Submission submission = new Submission(
-                submissionId,
-                title,
-                abstractText,
-                supervisorName,      // ✅ stored in Submission now
-                presentationType,
-                filePath,
-                this
-        );
-
-        getSubmissions().add(submission);
-
-        // Optional: also update student's default supervisor for next registrations
-        if (supervisorName != null && !supervisorName.trim().isEmpty()) {
-            this.supervisorName = supervisorName.trim();
-        }
-
-        return submission;
-    }
-
+    // Register for seminar by creating a submission
     public Submission registerSubmission(String title, String abstractText,
                                          String presentationType, String filePath) {
-        return registerSubmission(title, abstractText, this.supervisorName, presentationType, filePath);
+        String submissionId = "SUB" + System.currentTimeMillis();
+        Submission submission = new Submission(submissionId, title, abstractText,
+                presentationType, filePath, this);
+        submissions.add(submission);
+        return submission;
     }
 
     // Upload presentation materials
     public boolean uploadMaterial(Submission submission, String filePath) {
         if (submission == null) return false;
 
-        if (getSubmissions().contains(submission)) {
+        if (submissions.contains(submission)) {
             submission.setFilePath(filePath);
             return true;
         }
@@ -74,8 +56,8 @@ public class Student extends User implements Serializable {
     @Override
     public void displayDashboard() {
         System.out.println("Student Dashboard for: " + getName());
-        System.out.println("Supervisor: " + (supervisorName == null ? "" : supervisorName));
-        System.out.println("Total Submissions: " + getSubmissions().size());
+        System.out.println("Supervisor: " + supervisorName);
+        System.out.println("Total Submissions: " + submissions.size());
     }
 
     @Override
@@ -83,8 +65,8 @@ public class Student extends User implements Serializable {
         return "Student{" +
                 "name='" + getName() + '\'' +
                 ", userId='" + getUserId() + '\'' +
-                ", supervisor='" + (supervisorName == null ? "" : supervisorName) + '\'' +
-                ", submissions=" + getSubmissions().size() +
+                ", supervisor='" + supervisorName + '\'' +
+                ", submissions=" + submissions.size() +
                 '}';
     }
 }
