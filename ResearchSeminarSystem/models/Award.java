@@ -4,10 +4,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Award class - represents awards for best presentations
- * Updated for persistence (Serializable) + safer null handling
- */
+// Award class - represents awards for best presentations
+
 public class Award implements Serializable {
     private static final long serialVersionUID = 1L;
 

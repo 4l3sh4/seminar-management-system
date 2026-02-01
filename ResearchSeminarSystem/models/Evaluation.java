@@ -2,10 +2,8 @@ package models;
 
 import java.io.Serializable;
 
-/**
- * Evaluation class - represents an evaluation of a submission by an evaluator
- * Updated for persistence (Serializable) + safer null handling
- */
+// Evaluation class - represents an evaluation of a submission by an evaluator
+
 public class Evaluation implements Serializable {
     private static final long serialVersionUID = 1L;
 

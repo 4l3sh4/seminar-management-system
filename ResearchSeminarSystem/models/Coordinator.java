@@ -4,10 +4,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Coordinator class - represents faculty staff managing the seminar
- * Updated for persistence (Serializable)
- */
+// Coordinator class - represents faculty staff managing the seminar
+
 public class Coordinator extends User implements Serializable {
     private static final long serialVersionUID = 1L;
 

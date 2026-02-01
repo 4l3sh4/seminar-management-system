@@ -4,10 +4,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Evaluator class - represents a panel member who evaluates presentations
- * Updated for persistence (Serializable)
- */
+// Evaluator class - represents a panel member who evaluates presentations
+
 public class Evaluator extends User implements Serializable {
     private static final long serialVersionUID = 1L;
 

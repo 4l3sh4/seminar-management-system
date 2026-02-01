@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 // Submission class - represents a research presentation submission
+
 public class Submission implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -45,7 +46,7 @@ public class Submission implements Serializable {
                 presentationType, filePath, student);
     }
 
-    // ---------- Getters / Setters ----------
+    // Getters / Setters 
 
     public String getSubmissionId() {
         return submissionId;
@@ -121,7 +122,7 @@ public class Submission implements Serializable {
         return (student != null && student.getName() != null) ? student.getName() : "Unknown Student";
     }
 
-    // ---------- Evaluation helpers ----------
+    // Evaluation helpers 
 
     public void addEvaluation(Evaluation evaluation) {
         if (evaluation == null) return;
@@ -147,7 +148,7 @@ public class Submission implements Serializable {
         return (count == 0) ? 0.0 : total / count;
     }
 
-    // ---------- Details ----------
+    // Details 
 
     public String getDetails() {
         String safeId = (submissionId != null) ? submissionId : "";

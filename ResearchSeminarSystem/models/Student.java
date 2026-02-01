@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 // Student class - represents a presenter in the seminar
+
 public class Student extends User implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -47,7 +48,6 @@ public class Student extends User implements Serializable {
 
         getSubmissions().add(submission);
 
-        // Optional: also update student's default supervisor for next registrations
         if (supervisorName != null && !supervisorName.trim().isEmpty()) {
             this.supervisorName = supervisorName.trim();
         }

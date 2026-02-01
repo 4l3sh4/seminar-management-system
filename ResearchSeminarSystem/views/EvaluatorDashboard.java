@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 // Evaluator Dashboard
+
 public class EvaluatorDashboard extends JFrame {
     private final Evaluator evaluator;
     private final DataManager dataManager;
@@ -311,11 +312,10 @@ public class EvaluatorDashboard extends JFrame {
         for (Session s : getMySessionsForEvaluator()) {
             int count = (s.getSubmissions() == null) ? 0 : s.getSubmissions().size();
 
-            // ✅ UPDATED: include time in the table row
             sessionModel.addRow(new Object[]{
                     s.getSessionId(),
                     s.getDate(),
-                    s.getTime(),      // ✅ NEW
+                    s.getTime(),      
                     s.getVenue(),
                     s.getSessionType(),
                     count

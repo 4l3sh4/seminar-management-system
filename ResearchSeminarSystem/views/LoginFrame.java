@@ -10,6 +10,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 // LoginFrame - Main login interface for the Seminar Management System
+
 public class LoginFrame extends JFrame {
     private JTextField userIdField;
     private JPasswordField passwordField;
@@ -60,7 +61,7 @@ public class LoginFrame extends JFrame {
         // The form
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBorder(BorderFactory.createTitledBorder("Login"));
-        formPanel.setPreferredSize(new Dimension(560, 280)); // ✅ prevents tiny look on large screens
+        formPanel.setPreferredSize(new Dimension(560, 280)); 
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -74,7 +75,7 @@ public class LoginFrame extends JFrame {
 
         gbc.gridx = 1;
         gbc.gridy = 0;
-        gbc.weightx = 1; // ✅ allow grow
+        gbc.weightx = 1; 
         userIdField = new JTextField();
         formPanel.add(userIdField, gbc);
 
@@ -86,7 +87,7 @@ public class LoginFrame extends JFrame {
 
         gbc.gridx = 1;
         gbc.gridy = 1;
-        gbc.weightx = 1; // ✅ allow grow
+        gbc.weightx = 1; 
         passwordField = new JPasswordField();
         formPanel.add(passwordField, gbc);
 
@@ -98,7 +99,7 @@ public class LoginFrame extends JFrame {
 
         gbc.gridx = 1;
         gbc.gridy = 2;
-        gbc.weightx = 1; // ✅ allow grow
+        gbc.weightx = 1; 
         roleComboBox = new JComboBox<>(new String[]{"Student", "Evaluator", "Coordinator"});
         formPanel.add(roleComboBox, gbc);
 
@@ -197,7 +198,7 @@ public class LoginFrame extends JFrame {
 
         JTextField nameField = new JTextField();
         JTextField emailField = new JTextField();
-        JTextField contactField = new JTextField(); // NEW
+        JTextField contactField = new JTextField(); 
         JPasswordField passField = new JPasswordField();
         JPasswordField confirmField = new JPasswordField();
         JComboBox<String> roleBox = new JComboBox<>(new String[]{"Student", "Evaluator", "Coordinator"});
@@ -228,7 +229,16 @@ public class LoginFrame extends JFrame {
                 return;
             }
 
-            // Simple phone validation (adjust if you want stricter rules)
+            // Simple phone validation
+            if (!email.matches("^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^-]+(?:\\.[a-zA-Z0-9_!#$%&'*+/=?`{|}~^-]+)*@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*$")) {
+                JOptionPane.showMessageDialog(dialog,
+                        "Please enter a valid email.",
+                        "Validation Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Simple phone validation
             if (!contact.matches("[0-9+()\\-\\s]{7,20}")) {
                 JOptionPane.showMessageDialog(dialog,
                         "Please enter a valid contact number (digits and + - ( ) only).",
@@ -296,7 +306,7 @@ public class LoginFrame extends JFrame {
         dialog.add(btnPanel, BorderLayout.SOUTH);
 
         dialog.pack();
-        dialog.setMinimumSize(new Dimension(520, 360)); // ✅ not tiny dialog
+        dialog.setMinimumSize(new Dimension(520, 360)); 
         dialog.setLocationRelativeTo(this);
         dialog.getRootPane().setDefaultButton(okBtn);
         dialog.setVisible(true);
@@ -314,12 +324,7 @@ public class LoginFrame extends JFrame {
         }
     }
 
-    /**
-     * Generates IDs like:
-     * Student -> S001, S002, ...
-     * Evaluator -> E001, E002, ...
-     * Coordinator -> C001, C002, ...
-     */
+    // ID Generators
     private String generateNextUserId(String role) {
         String prefix;
         if ("Student".equals(role)) prefix = "S";
@@ -370,10 +375,7 @@ public class LoginFrame extends JFrame {
         UIManager.put("OptionPane.buttonFont", f.deriveFont(Font.BOLD));
     }
 
-    /**
-     * Calls a no-arg method if it exists.
-     * Example: DataManager.saveData(), DataManager.loadData()
-     */
+    // Calls a no-arg method if it exists.
     private static void invokeIfExists(Object target, String methodName) {
         try {
             Method m = target.getClass().getMethod(methodName);
@@ -384,9 +386,7 @@ public class LoginFrame extends JFrame {
         }
     }
 
-    /**
-     * Calls a 1-arg method if it exists; returns true if it was found and called successfully.
-     */
+    // Calls a 1-arg method if it exists; returns true if it was found and called successfully.
     private static boolean invokeIfExistsWithArg(Object target, String methodName, Class<?> argType, Object argValue) {
         try {
             Method m = target.getClass().getMethod(methodName, argType);

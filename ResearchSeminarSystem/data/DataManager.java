@@ -30,7 +30,7 @@ public class DataManager {
         return instance;
     }
 
-    // ---------- Persistence ----------
+    // Persistence 
     private DataStore loadFromDisk() {
         File f = new File(DATA_FILE);
         if (!f.exists()) return null;
@@ -51,7 +51,7 @@ public class DataManager {
         }
     }
 
-    // ---------- User management ----------
+    // User management 
     public void addStudent(Student student) {
         if (student == null) return;
         store.students.add(student);
@@ -97,7 +97,7 @@ public class DataManager {
         return false;
     }
 
-    // ---------- Getters ----------
+    // Getters
     public List<User> getUsers() { return store.users; }
     public List<Student> getStudents() { return store.students; }
     public List<Evaluator> getEvaluators() { return store.evaluators; }
@@ -107,7 +107,7 @@ public class DataManager {
     public List<Evaluation> getEvaluations() { return store.evaluations; }
     public List<Award> getAwards() { return store.awards; }
 
-    // ---------- Add entities ----------
+    // Add entities
     public void addSubmission(Submission submission) {
         if (submission == null) return;
         store.submissions.add(submission);
@@ -138,11 +138,11 @@ public class DataManager {
         saveToDisk();
     }
 
-    // ---------- Current user ----------
+    // Current user
     public User getCurrentUser() { return currentUser; }
     public void setCurrentUser(User user) { this.currentUser = user; }
 
-    // ---------- Find helpers ----------
+    // Find helpers 
     public Student findStudentById(String studentId) {
         if (studentId == null) return null;
         for (Student s : store.students) {
@@ -175,7 +175,7 @@ public class DataManager {
         return null;
     }
 
-    // ---------- Auto ID generation ----------
+    // Auto ID generation 
     private String nextId(String prefix) {
         int max = 0;
 
@@ -198,7 +198,7 @@ public class DataManager {
     public String generateEvaluatorId() { return nextId("E"); }
     public String generateCoordinatorId() { return nextId("C"); }
 
-    // ---------- Useful filters ----------
+    // Useful filters 
     // If your Evaluation stores an Evaluator object, use this.
     public List<Evaluation> getEvaluationsByEvaluator(String evaluatorId) {
         List<Evaluation> result = new ArrayList<>();

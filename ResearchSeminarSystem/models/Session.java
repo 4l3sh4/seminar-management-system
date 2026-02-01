@@ -4,22 +4,19 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Session class - represents a seminar session
- * Updated for persistence (Serializable) + safer null handling + includes time
- */
+// Session class - represents a seminar session
+
 public class Session implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String sessionId;
     private String date;
-    private String time;          // ✅ NEW: session time (e.g. "10:00", "14:30")
+    private String time;          
     private String venue;
-    private String sessionType;   // "Oral" or "Poster"
+    private String sessionType;   
     private List<Submission> submissions;
     private List<Evaluator> evaluators;
 
-    // ✅ NEW constructor with time
     public Session(String sessionId, String date, String time, String venue, String sessionType) {
         this.sessionId = sessionId;
         this.date = date;
@@ -30,7 +27,6 @@ public class Session implements Serializable {
         this.evaluators = new ArrayList<>();
     }
 
-    // ✅ Backward-compatible constructor (old code still works)
     public Session(String sessionId, String date, String venue, String sessionType) {
         this(sessionId, date, "", venue, sessionType);
     }
@@ -48,12 +44,10 @@ public class Session implements Serializable {
         this.date = date;
     }
 
-    // ✅ NEW
     public String getTime() {
         return time;
     }
 
-    // ✅ NEW
     public void setTime(String time) {
         this.time = time;
     }

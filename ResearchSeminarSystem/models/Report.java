@@ -6,10 +6,8 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * Report class - generates various reports for the seminar
- * Updated for persistence (Serializable) + safer null handling
- */
+// Report class - generates various reports for the seminar
+
 public class Report implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -47,7 +45,7 @@ public class Report implements Serializable {
         return generatedDate;
     }
 
-    // -------- Report Generators --------
+    // Report Generators
 
     public static Report generateScheduleReport(List<Session> sessions) {
         StringBuilder content = new StringBuilder();
@@ -141,7 +139,7 @@ public class Report implements Serializable {
         return new Report("Award", content.toString());
     }
 
-    // -------- Export Helpers --------
+    // Export Helpers 
 
     public boolean exportToFile(String filename) {
         if (filename == null || filename.trim().isEmpty()) return false;
@@ -160,7 +158,7 @@ public class Report implements Serializable {
         return temp.exportToFile(filename);
     }
 
-    // -------- Statistics --------
+    // Statistics
 
     public static String generateStatistics(List<Session> sessions) {
         if (sessions == null) sessions = java.util.Collections.emptyList();

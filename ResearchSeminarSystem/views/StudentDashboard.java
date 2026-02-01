@@ -8,9 +8,8 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.io.File;
 
-/**
- * StudentDashboard - Interface for students to register and manage submissions
- */
+// StudentDashboard - Interface for students to register and manage submissions
+
 public class StudentDashboard extends JFrame {
     private final Student student;
     private final DataManager dataManager;
@@ -199,10 +198,9 @@ public class StudentDashboard extends JFrame {
             return;
         }
 
-        // ✅ IMPORTANT: supervisor is stored in Submission now
         Submission submission = student.registerSubmission(title, abstractText, supervisor, type, filePath);
 
-        // (optional) also update student's default supervisor name for next time
+        // Update student's default supervisor name for next time
         student.setSupervisorName(supervisor);
 
         dataManager.addSubmission(submission); // saves to disk

@@ -2,10 +2,8 @@ package models;
 
 import java.io.Serializable;
 
-/**
- * User class - parent class for Student, Evaluator, and Coordinator
- * Updated for persistence (Serializable)
- */
+// User class - parent class for Student, Evaluator, and Coordinator
+
 public abstract class User implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -48,10 +46,6 @@ public abstract class User implements Serializable {
         this.email = email;
     }
 
-    /**
-     * NOTE: Password is stored in plain text for assignment simplicity.
-     * In real systems, always hash passwords.
-     */
     public String getPassword() {
         return password;
     }
