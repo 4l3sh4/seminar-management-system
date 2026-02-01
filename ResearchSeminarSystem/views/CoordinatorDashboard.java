@@ -7,7 +7,9 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
-// CoordinatorDashboard - Interface for coordinators to manage sessions, assignments, reports and awards
+/**
+ * CoordinatorDashboard - Interface for coordinators to manage sessions, assignments, reports and awards
+ */
 public class CoordinatorDashboard extends JFrame {
     private Coordinator coordinator;
     private DataManager dataManager;
@@ -220,6 +222,7 @@ public class CoordinatorDashboard extends JFrame {
             }
         });
 
+
         btnPanel.add(computeBtn);
         panel.add(btnPanel, BorderLayout.NORTH);
         panel.add(new JScrollPane(awardsArea), BorderLayout.CENTER);
@@ -294,15 +297,8 @@ public class CoordinatorDashboard extends JFrame {
 
         try {
             coordinator.assignSubmissionToSession(session, submission);
-
-            // ✅ IMPORTANT: persist updated session assignments
-            dataManager.saveToDisk();
-
             JOptionPane.showMessageDialog(this, "Submission assigned to session!",
                     "Success", JOptionPane.INFORMATION_MESSAGE);
-
-            loadSessions();
-
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Failed to assign submission: " + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
@@ -329,15 +325,8 @@ public class CoordinatorDashboard extends JFrame {
 
         try {
             coordinator.assignEvaluatorToSession(session, eval);
-
-            // ✅ IMPORTANT: persist updated session assignments
-            dataManager.saveToDisk();
-
             JOptionPane.showMessageDialog(this, "Evaluator assigned to session!",
                     "Success", JOptionPane.INFORMATION_MESSAGE);
-
-            loadSessions();
-
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Failed to assign evaluator: " + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
@@ -383,7 +372,7 @@ public class CoordinatorDashboard extends JFrame {
         String content = outputArea.getText().trim();
         if (content.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Nothing to export yet.",
-                    "Empty", JOptionPane.WARNING_MESSAGE);
+                "Empty", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -393,10 +382,10 @@ public class CoordinatorDashboard extends JFrame {
         boolean ok = Report.exportTextToFile(content, filename);
         if (ok) {
             JOptionPane.showMessageDialog(this, "Exported to " + filename,
-                    "Success", JOptionPane.INFORMATION_MESSAGE);
+                "Success", JOptionPane.INFORMATION_MESSAGE);
         } else {
             JOptionPane.showMessageDialog(this, "Export failed.",
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -424,7 +413,7 @@ public class CoordinatorDashboard extends JFrame {
                     sub.getTitle(),
                     sub.getPresentationType(),
                     String.format("%.2f", sub.getAverageScore()),
-                    (sub.getFilePath() == null || sub.getFilePath().isEmpty()) ? "Not uploaded" : "Uploaded"
+                    sub.getFilePath().isEmpty() ? "Not uploaded" : "Uploaded"
             });
         }
     }
