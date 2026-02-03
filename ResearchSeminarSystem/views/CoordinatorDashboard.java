@@ -5,6 +5,7 @@ import models.*;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
 import java.awt.*;
 
 // CoordinatorDashboard - Interface for coordinators to manage sessions, assignments, reports and awards
@@ -23,6 +24,8 @@ public class CoordinatorDashboard extends JFrame {
     private DefaultTableModel evaluatorModel;
 
     private JTextArea outputArea;
+    
+    private TableRowSorter<DefaultTableModel> submissionSorter;
 
     // Create session form fields
     private JTextField dateField;
@@ -130,6 +133,34 @@ public class CoordinatorDashboard extends JFrame {
         };
         submissionTable = new JTable(submissionModel);
         center.add(wrap("Submissions", submissionTable));
+        submissionSorter = new TableRowSorter<>(submissionModel);
+        submissionTable.setRowSorter(submissionSorter);
+        
+        submissionTable.setDefaultRenderer(Object.class, new javax.swing.table.DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                                                           boolean isSelected, boolean hasFocus,
+                                                           int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+        
+                int modelRow = table.convertRowIndexToModel(row);
+                Object assignedVal = submissionModel.getValueAt(modelRow, 3); // "Assigned Session"
+        
+                boolean notAssigned = assignedVal == null
+                        || assignedVal.toString().equalsIgnoreCase("Not assigned");
+        
+                if (!isSelected) {
+                    if (notAssigned) {
+                        c.setBackground(new Color(255, 255, 180)); // 🌕 light yellow
+                    } else {
+                        c.setBackground(Color.WHITE); // no colour if already assigned
+                    }
+                }
+        
+                return c;
+            }
+        });
+
 
         // Evaluators table
         String[] eCols = {"Evaluator ID", "Name"};
