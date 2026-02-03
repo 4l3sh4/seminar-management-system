@@ -224,4 +224,16 @@ public class DataManager {
 
         return result;
     }
+    
+    public Session findSessionBySubmissionId(String submissionId) {
+        if (submissionId == null) return null;
+        for (Session s : store.sessions) {
+            if (s == null) continue;
+            for (Submission sub : s.getSubmissions()) {
+                if (sub != null && submissionId.equals(sub.getSubmissionId())) return s;
+            }
+        }
+        return null;
+    }
+
 }

@@ -38,27 +38,39 @@ public class Coordinator extends User implements Serializable {
         return session;
     }
 
-    // Assign evaluator to session
     public boolean assignEvaluatorToSession(Session session, Evaluator evaluator) {
         if (session == null || evaluator == null) return false;
-
-        if (managedSessions.contains(session)) {
-            session.addEvaluator(evaluator);
-            evaluator.assignToSession(session);
-            return true;
+    
+        // Ensure this coordinator manages the session
+        if (!managedSessions.contains(session)) {
+            managedSessions.add(session);
         }
-        return false;
+    
+        session.addEvaluator(evaluator);
+        evaluator.assignToSession(session);
+        return true;
     }
-
-    // Assign submission to session
+    
     public boolean assignSubmissionToSession(Session session, Submission submission) {
         if (session == null || submission == null) return false;
-
-        if (managedSessions.contains(session)) {
-            session.addSubmission(submission);
-            return true;
+    
+        if (!managedSessions.contains(session)) {
+            managedSessions.add(session);
         }
-        return false;
+    
+        session.addSubmission(submission);
+    
+        if ("Poster".equalsIgnoreCase(session.getSessionType())) {
+            if (submission.getBoardId() == null || submission.getBoardId().trim().isEmpty()) {
+                String v = (session.getVenue() == null)
+                        ? "VENUE"
+                        : session.getVenue().replaceAll("\\s+", "").toUpperCase();
+                int n = session.getSubmissions().size();
+                submission.setBoardId(v + "-" + n);
+            }
+        }
+    
+        return true;
     }
 
     // Generate seminar schedule (String version)

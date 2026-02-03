@@ -197,4 +197,18 @@ public class Submission implements Serializable {
         String safeType = (presentationType != null) ? presentationType : "";
         return safeTitle + " (" + safeType + ") - " + getStudentName();
     }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Submission)) return false;
+        Submission other = (Submission) o;
+        return submissionId != null && submissionId.equals(other.submissionId);
+    }
+    
+    @Override
+    public int hashCode() {
+        return submissionId == null ? 0 : submissionId.hashCode();
+    }
+
 }

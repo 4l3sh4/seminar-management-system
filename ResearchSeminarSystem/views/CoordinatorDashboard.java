@@ -124,7 +124,7 @@ public class CoordinatorDashboard extends JFrame {
         center.add(wrap("Sessions", sessionTable));
 
         // Submissions table
-        String[] subCols = {"Submission ID", "Title", "Type", "Avg Score", "File"};
+        String[] subCols = {"Submission ID", "Title", "Type", "Assigned Session", "Avg Score", "File"};
         submissionModel = new DefaultTableModel(subCols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
@@ -282,15 +282,30 @@ public class CoordinatorDashboard extends JFrame {
         if (session == null || submission == null) return;
 
         try {
-            coordinator.assignSubmissionToSession(session, submission);
-
+            String sType = session.getSessionType();
+            String subType = submission.getPresentationType();
+            if (sType != null && subType != null && !sType.equalsIgnoreCase(subType)) {
+                JOptionPane.showMessageDialog(this,
+                        "Type mismatch!\nSession: " + sType + "\nSubmission: " + subType,
+                        "Cannot Assign", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        
+            boolean ok = coordinator.assignSubmissionToSession(session, submission);
+        
+            if (!ok) {
+                JOptionPane.showMessageDialog(this,
+                        "Assignment failed. This session may not be managed by this coordinator.",
+                        "Failed", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        
             dataManager.saveToDisk();
-
+        
             JOptionPane.showMessageDialog(this, "Submission assigned to session!",
                     "Success", JOptionPane.INFORMATION_MESSAGE);
-
+        
             loadSessions();
-
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Failed to assign submission: " + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
@@ -316,19 +331,26 @@ public class CoordinatorDashboard extends JFrame {
         if (session == null || eval == null) return;
 
         try {
-            coordinator.assignEvaluatorToSession(session, eval);
-
+            boolean ok = coordinator.assignEvaluatorToSession(session, eval);
+        
+            if (!ok) {
+                JOptionPane.showMessageDialog(this,
+                        "Assignment failed. This session may not be managed by this coordinator.",
+                        "Failed", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        
             dataManager.saveToDisk();
-
+        
             JOptionPane.showMessageDialog(this, "Evaluator assigned to session!",
                     "Success", JOptionPane.INFORMATION_MESSAGE);
-
+        
             loadSessions();
-
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Failed to assign evaluator: " + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
+
     }
 
     private void viewSessionDetails() {
@@ -404,12 +426,19 @@ public class CoordinatorDashboard extends JFrame {
 
     private void loadSubmissions() {
         submissionModel.setRowCount(0);
+    
         for (Submission sub : dataManager.getSubmissions()) {
             if (sub == null) continue;
+    
+            // NEW: find which session this submission belongs to (if any)
+            Session assigned = dataManager.findSessionBySubmissionId(sub.getSubmissionId());
+            String assignedText = (assigned == null) ? "Not assigned" : assigned.getSessionId();
+    
             submissionModel.addRow(new Object[]{
                     sub.getSubmissionId(),
                     sub.getTitle(),
                     sub.getPresentationType(),
+                    assignedText, // NEW column
                     String.format("%.2f", sub.getAverageScore()),
                     (sub.getFilePath() == null || sub.getFilePath().isEmpty()) ? "Not uploaded" : "Uploaded"
             });
