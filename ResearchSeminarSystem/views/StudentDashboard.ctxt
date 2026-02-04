@@ -1,6 +1,5 @@
 #BlueJ class context
 comment0.target=StudentDashboard
-comment0.text=\r\n\ StudentDashboard\ -\ Interface\ for\ students\ to\ register\ and\ manage\ submissions\r\n
 comment1.params=student
 comment1.target=StudentDashboard(models.Student)
 comment10.params=

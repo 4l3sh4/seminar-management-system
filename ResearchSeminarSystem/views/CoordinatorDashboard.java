@@ -32,6 +32,11 @@ public class CoordinatorDashboard extends JFrame {
     private JTextField timeField;     
     private JTextField venueField;
     private JComboBox<String> typeBox;
+    
+    private JPanel sessionsWrap;
+    private JPanel submissionsWrap;
+    private JPanel evaluatorsWrap;
+
 
     public CoordinatorDashboard(Coordinator coordinator) {
         this.coordinator = coordinator;
@@ -97,6 +102,10 @@ public class CoordinatorDashboard extends JFrame {
         venueField = new JTextField(12);
         typeBox = new JComboBox<>(new String[]{"Oral", "Poster"});
 
+        dateField.setToolTipText("Format: DD/MM/YYYY (e.g., 31/01/2026)");
+        timeField.setToolTipText("Example: 10AM, 12PM");
+        venueField.setToolTipText("Example: Hall 1");
+
         JButton createBtn = new JButton("Create");
         createBtn.setBackground(new Color(52, 152, 219));
         createBtn.setForeground(Color.WHITE);
@@ -124,7 +133,15 @@ public class CoordinatorDashboard extends JFrame {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
         sessionTable = new JTable(sessionModel);
-        center.add(wrap("Sessions", sessionTable));
+        sessionTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        sessionTable.getColumnModel().getColumn(0).setPreferredWidth(110); // Session ID
+        sessionTable.getColumnModel().getColumn(1).setPreferredWidth(90);  // Date
+        sessionTable.getColumnModel().getColumn(2).setPreferredWidth(60);  // Time
+        sessionTable.getColumnModel().getColumn(3).setPreferredWidth(140); // Venue
+        sessionTable.getColumnModel().getColumn(4).setPreferredWidth(60);  // Type
+
+        sessionsWrap = wrap("Sessions", sessionTable);
+        center.add(sessionsWrap);
 
         // Submissions table
         String[] subCols = {"Submission ID", "Title", "Type", "Assigned Session", "Avg Score", "File"};
@@ -132,7 +149,16 @@ public class CoordinatorDashboard extends JFrame {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
         submissionTable = new JTable(submissionModel);
-        center.add(wrap("Submissions", submissionTable));
+        submissionTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        submissionTable.getColumnModel().getColumn(0).setPreferredWidth(110);
+        submissionTable.getColumnModel().getColumn(1).setPreferredWidth(160);
+        submissionTable.getColumnModel().getColumn(2).setPreferredWidth(60);
+        submissionTable.getColumnModel().getColumn(3).setPreferredWidth(110);
+        submissionTable.getColumnModel().getColumn(4).setPreferredWidth(70);
+        submissionTable.getColumnModel().getColumn(5).setPreferredWidth(80);
+
+        submissionsWrap = wrap("Submissions", submissionTable);
+        center.add(submissionsWrap);
         submissionSorter = new TableRowSorter<>(submissionModel);
         submissionTable.setRowSorter(submissionSorter);
         
@@ -168,7 +194,12 @@ public class CoordinatorDashboard extends JFrame {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
         evaluatorTable = new JTable(evaluatorModel);
-        center.add(wrap("Evaluators", evaluatorTable));
+        evaluatorTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        evaluatorTable.getColumnModel().getColumn(0).setPreferredWidth(100);
+        evaluatorTable.getColumnModel().getColumn(1).setPreferredWidth(140);
+
+        evaluatorsWrap = wrap("Evaluators", evaluatorTable);
+        center.add(evaluatorsWrap);
 
         panel.add(center, BorderLayout.CENTER);
 
@@ -333,10 +364,14 @@ public class CoordinatorDashboard extends JFrame {
         
             dataManager.saveToDisk();
         
-            JOptionPane.showMessageDialog(this, "Submission assigned to session!",
+            JOptionPane.showMessageDialog(this,
+                    "Assigned submission:\n" + submission.getTitle() +
+                    "\n→ Session " + session.getSessionId() +
+                    " (" + session.getDate() + " " + session.getTime() + ")",
                     "Success", JOptionPane.INFORMATION_MESSAGE);
-        
+                    
             loadSessions();
+            loadSubmissions();  
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Failed to assign submission: " + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
@@ -453,6 +488,9 @@ public class CoordinatorDashboard extends JFrame {
                     s.getSessionType()
             });
         }
+        if (sessionsWrap != null) {
+            sessionsWrap.setBorder(BorderFactory.createTitledBorder("Sessions (" + sessionModel.getRowCount() + ")"));
+        }
     }
 
     private void loadSubmissions() {
@@ -474,6 +512,21 @@ public class CoordinatorDashboard extends JFrame {
                     (sub.getFilePath() == null || sub.getFilePath().isEmpty()) ? "Not uploaded" : "Uploaded"
             });
         }
+        
+        int total = submissionModel.getRowCount();
+        int unassigned = 0;
+        
+        for (int i = 0; i < total; i++) {
+            String assigned = String.valueOf(submissionModel.getValueAt(i, 3));
+            if ("Not assigned".equalsIgnoreCase(assigned)) unassigned++;
+        }
+        
+        if (submissionsWrap != null) {
+            submissionsWrap.setBorder(
+                BorderFactory.createTitledBorder("Submissions (" + total + ", Unassigned: " + unassigned + ")")
+            );
+        }
+
     }
 
     private void loadEvaluators() {
@@ -484,6 +537,9 @@ public class CoordinatorDashboard extends JFrame {
                     e.getUserId(),
                     e.getName()
             });
+        }
+        if (evaluatorsWrap != null) {
+            evaluatorsWrap.setBorder(BorderFactory.createTitledBorder("Evaluators (" + evaluatorModel.getRowCount() + ")"));
         }
     }
 
