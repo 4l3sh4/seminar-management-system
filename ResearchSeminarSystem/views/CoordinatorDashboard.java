@@ -273,14 +273,26 @@ public class CoordinatorDashboard extends JFrame {
 
         computeBtn.addActionListener(e -> {
             try {
-                java.util.List<Award> awards = coordinator.computeAwards(dataManager.getSubmissions());
-
+                java.util.List<Submission> eligible = new java.util.ArrayList<>();
+                for (Submission s : dataManager.getSubmissions()) {
+                    if (s != null && s.getEvaluations() != null && !s.getEvaluations().isEmpty()) {
+                        eligible.add(s);
+                    }
+                }
+        
+                if (eligible.isEmpty()) {
+                    awardsArea.setText("No eligible submissions yet (no evaluations recorded).");
+                    return;
+                }
+        
+                java.util.List<Award> awards = coordinator.computeAwards(eligible);
+        
                 StringBuilder sb = new StringBuilder();
                 for (Award a : awards) {
                     sb.append(a.getDetails()).append("\n\n");
                 }
                 awardsArea.setText(sb.toString());
-
+        
             } catch (Exception ex) {
                 awardsArea.setText("Failed to compute awards: " + ex.getMessage());
             }
@@ -362,10 +374,10 @@ public class CoordinatorDashboard extends JFrame {
             session.setDate(newDate.getText().trim());
             session.setTime(newTime.getText().trim());
             session.setVenue(newVenue.getText().trim());
-            session.setSessionType((String) newType.getSelectedItem());
     
             dataManager.saveToDisk();
             loadSessions();
+            loadSubmissions();
             JOptionPane.showMessageDialog(this, "Session updated.",
                     "Success", JOptionPane.INFORMATION_MESSAGE);
         }
@@ -400,6 +412,15 @@ public class CoordinatorDashboard extends JFrame {
                 return;
             }
         
+            Session already = dataManager.findSessionBySubmissionId(submission.getSubmissionId());
+            if (already != null) {
+                JOptionPane.showMessageDialog(this,
+                        "This submission is already assigned to session " + already.getSessionId() +
+                        "\nUnassign it first before assigning again.",
+                        "Already Assigned", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
             boolean ok = coordinator.assignSubmissionToSession(session, submission);
         
             if (!ok) {
@@ -455,7 +476,10 @@ public class CoordinatorDashboard extends JFrame {
         
             dataManager.saveToDisk();
         
-            JOptionPane.showMessageDialog(this, "Evaluator assigned to session!",
+            JOptionPane.showMessageDialog(this,
+                    "Assigned evaluator:\n" + eval.getName() +
+                    "\n→ Session " + session.getSessionId() +
+                    " (" + session.getDate() + " " + session.getTime() + ")",
                     "Success", JOptionPane.INFORMATION_MESSAGE);
         
             loadSessions();
