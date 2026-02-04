@@ -215,6 +215,10 @@ public class CoordinatorDashboard extends JFrame {
         JButton viewSessionBtn = new JButton("View Session Details");
         viewSessionBtn.addActionListener(e -> viewSessionDetails());
 
+        JButton editSessionBtn = new JButton("Edit Session");
+        editSessionBtn.addActionListener(e -> editSelectedSession());
+        btnPanel.add(editSessionBtn);
+
         btnPanel.add(viewSessionBtn);
         btnPanel.add(assignSubmissionBtn);
         btnPanel.add(assignEvaluatorBtn);
@@ -324,6 +328,49 @@ public class CoordinatorDashboard extends JFrame {
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+    
+    private void editSelectedSession() {
+        int row = sessionTable.getSelectedRow();
+        if (row == -1) {
+            JOptionPane.showMessageDialog(this, "Select a session first.",
+                    "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+    
+        String sessionId = (String) sessionModel.getValueAt(row, 0);
+        Session session = dataManager.findSessionById(sessionId);
+        if (session == null) return;
+    
+        JTextField newDate = new JTextField(session.getDate());
+        JTextField newTime = new JTextField(session.getTime());
+        JTextField newVenue = new JTextField(session.getVenue());
+        JComboBox<String> newType = new JComboBox<>(new String[]{"Oral", "Poster"});
+        newType.setSelectedItem(session.getSessionType());
+        newType.setEnabled(false); 
+        newType.setToolTipText("Session type cannot be changed after creation");
+    
+        JPanel form = new JPanel(new GridLayout(0,2,8,8));
+        form.add(new JLabel("Date:")); form.add(newDate);
+        form.add(new JLabel("Time:")); form.add(newTime);
+        form.add(new JLabel("Venue:")); form.add(newVenue);
+        form.add(new JLabel("Type:")); form.add(newType);
+    
+        int result = JOptionPane.showConfirmDialog(this, form,
+                "Edit Session " + sessionId, JOptionPane.OK_CANCEL_OPTION);
+    
+        if (result == JOptionPane.OK_OPTION) {
+            session.setDate(newDate.getText().trim());
+            session.setTime(newTime.getText().trim());
+            session.setVenue(newVenue.getText().trim());
+            session.setSessionType((String) newType.getSelectedItem());
+    
+            dataManager.saveToDisk();
+            loadSessions();
+            JOptionPane.showMessageDialog(this, "Session updated.",
+                    "Success", JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
 
     private void assignSubmissionToSession() {
         int sRow = sessionTable.getSelectedRow();
@@ -503,9 +550,14 @@ public class CoordinatorDashboard extends JFrame {
             Session assigned = dataManager.findSessionBySubmissionId(sub.getSubmissionId());
             String assignedText = (assigned == null) ? "Not assigned" : assigned.getSessionId();
     
+            String title = sub.getTitle();
+            if (title != null && title.length() > 25) {
+                title = title.substring(0, 25) + "...";
+            }
+ 
             submissionModel.addRow(new Object[]{
                     sub.getSubmissionId(),
-                    sub.getTitle(),
+                    title,
                     sub.getPresentationType(),
                     assignedText, // NEW column
                     String.format("%.2f", sub.getAverageScore()),
