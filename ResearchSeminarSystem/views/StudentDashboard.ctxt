@@ -1,10 +1,13 @@
 #BlueJ class context
 comment0.target=StudentDashboard
-comment0.text=\r\n\ StudentDashboard\ -\ Interface\ for\ students\ to\ register\ and\ manage\ submissions\r\n
 comment1.params=student
 comment1.target=StudentDashboard(models.Student)
 comment10.params=
-comment10.target=void\ logout()
+comment10.target=void\ viewFeedback()
+comment11.params=
+comment11.target=void\ editSubmission()
+comment12.params=
+comment12.target=void\ logout()
 comment2.params=
 comment2.target=void\ initializeUI()
 comment3.params=
@@ -21,4 +24,4 @@ comment8.params=
 comment8.target=void\ loadSubmissions()
 comment9.params=
 comment9.target=void\ viewSubmissionDetails()
-numComments=11
+numComments=13
