@@ -74,8 +74,13 @@ public class Award implements Serializable {
                 score = sub.getAverageScore();
     
             } else if ("People's Choice".equals(awardType)) {
-                score = sub.getTotalScore(); // 🔥 this is the whole point
-    
+                double total = 0.0;
+            for (Evaluation ev : sub.getEvaluations()) {
+                if (ev == null) continue;
+                total += ev.getTotalScore();
+            }
+            score = total;
+
             } else {
                 continue;
             }

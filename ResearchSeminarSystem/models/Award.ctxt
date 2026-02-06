@@ -1,6 +1,5 @@
 #BlueJ class context
 comment0.target=Award
-comment0.text=\r\n\ Award\ class\ -\ represents\ awards\ for\ best\ presentations\r\n\ Updated\ for\ persistence\ (Serializable)\ +\ safer\ null\ handling\r\n
 comment1.params=awardType
 comment1.target=Award(java.lang.String)
 comment10.params=
@@ -17,8 +16,8 @@ comment5.params=awardType
 comment5.target=void\ setAwardType(java.lang.String)
 comment6.params=
 comment6.target=Submission\ getWinner()
-comment7.params=winner
-comment7.target=void\ setWinner(Submission)
+comment7.params=winner\ score
+comment7.target=void\ setWinner(Submission,\ double)
 comment8.params=
 comment8.target=double\ getWinningScore()
 comment9.params=submissions

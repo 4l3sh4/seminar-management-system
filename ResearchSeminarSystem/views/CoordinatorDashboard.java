@@ -284,53 +284,157 @@ public class CoordinatorDashboard extends JFrame {
             return panel;
         }
 
-    private JPanel createAwardsPanel() {
-        JPanel panel = new JPanel(new BorderLayout(10,10));
-        panel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
-
-        JTextArea awardsArea = new JTextArea();
-        awardsArea.setEditable(false);
-        awardsArea.setLineWrap(true);
-        awardsArea.setWrapStyleWord(true);
-
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JButton computeBtn = new JButton("Compute Awards");
-        computeBtn.setBackground(new Color(46, 204, 113));
-        computeBtn.setForeground(Color.WHITE);
-
-        computeBtn.addActionListener(e -> {
-            try {
-                java.util.List<Submission> eligible = new java.util.ArrayList<>();
-                for (Submission s : dataManager.getSubmissions()) {
-                    if (s != null && s.getEvaluations() != null && !s.getEvaluations().isEmpty()) {
-                        eligible.add(s);
-                    }
-                }
+        private JPanel createAwardsPanel() {
+            JPanel panel = new JPanel(new BorderLayout(12, 12));
+            panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
         
-                if (eligible.isEmpty()) {
-                    awardsArea.setText("No eligible submissions yet (no evaluations recorded).");
+            // Top toolbar
+            JPanel top = new JPanel(new BorderLayout());
+            JLabel title = new JLabel("Awards Results");
+            title.setFont(new Font("Arial", Font.BOLD, 16));
+            top.add(title, BorderLayout.WEST);
+        
+            JButton computeBtn = new JButton("Compute Awards");
+            computeBtn.setBackground(new Color(46, 204, 113));
+            computeBtn.setForeground(Color.WHITE);
+            computeBtn.setFocusPainted(false);
+        
+            top.add(computeBtn, BorderLayout.EAST);
+            panel.add(top, BorderLayout.NORTH);
+        
+            // Cards container
+            JPanel cards = new JPanel(new GridLayout(1, 3, 12, 12));
+        
+            AwardCard oralCard = new AwardCard("Best Oral");
+            AwardCard posterCard = new AwardCard("Best Poster");
+            AwardCard peopleCard = new AwardCard("People's Choice");
+        
+            cards.add(oralCard);
+            cards.add(posterCard);
+            cards.add(peopleCard);
+        
+            panel.add(cards, BorderLayout.CENTER);
+        
+            // Button action
+            computeBtn.addActionListener(e -> {
+                try {
+                    java.util.List<Submission> eligible = new java.util.ArrayList<>();
+                    for (Submission s : dataManager.getSubmissions()) {
+                        if (s != null && s.getEvaluations() != null && !s.getEvaluations().isEmpty()) {
+                            eligible.add(s);
+                        }
+                    }
+        
+                    if (eligible.isEmpty()) {
+                        oralCard.setEmpty("No eligible submissions yet.");
+                        posterCard.setEmpty("No eligible submissions yet.");
+                        peopleCard.setEmpty("No eligible submissions yet.");
+                        return;
+                    }
+        
+                    java.util.List<Award> awards = coordinator.computeAwards(eligible);
+        
+                    // reset all first
+                    oralCard.setEmpty("Not computed.");
+                    posterCard.setEmpty("Not computed.");
+                    peopleCard.setEmpty("Not computed.");
+        
+                    // fill based on award type
+                    for (Award a : awards) {
+                        if (a == null) continue;
+                        String type = a.getAwardType();
+        
+                        if ("Best Oral".equalsIgnoreCase(type)) {
+                            oralCard.setAward(a, false); // false = average metric
+                        } else if ("Best Poster".equalsIgnoreCase(type)) {
+                            posterCard.setAward(a, false);
+                        } else if ("People's Choice".equalsIgnoreCase(type)) {
+                            peopleCard.setAward(a, true); // true = total marks metric
+                        }
+                    }
+        
+                } catch (Exception ex) {
+                    oralCard.setEmpty("Failed: " + ex.getMessage());
+                    posterCard.setEmpty("Failed: " + ex.getMessage());
+                    peopleCard.setEmpty("Failed: " + ex.getMessage());
+                }
+            });
+        
+            return panel;
+        }
+        
+        /** Simple UI card for one award */
+        private static class AwardCard extends JPanel {
+            private final JLabel awardTitle;
+            private final JLabel winnerName;
+            private final JLabel submissionTitle;
+            private final JLabel submissionId;
+            private final JLabel scoreLabel;
+        
+            public AwardCard(String title) {
+                setLayout(new BorderLayout(8, 8));
+                setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(new Color(210, 210, 210)),
+                        BorderFactory.createEmptyBorder(12, 12, 12, 12)
+                ));
+                setBackground(Color.WHITE);
+        
+                awardTitle = new JLabel(title);
+                awardTitle.setFont(new Font("Arial", Font.BOLD, 14));
+        
+                winnerName = new JLabel("Winner: -");
+                submissionTitle = new JLabel("Submission: -");
+                submissionId = new JLabel("ID: -");
+                scoreLabel = new JLabel("Score: -");
+        
+                winnerName.setFont(new Font("Arial", Font.PLAIN, 13));
+                submissionTitle.setFont(new Font("Arial", Font.PLAIN, 13));
+                submissionId.setFont(new Font("Arial", Font.PLAIN, 12));
+                scoreLabel.setFont(new Font("Arial", Font.BOLD, 13));
+        
+                JPanel body = new JPanel();
+                body.setOpaque(false);
+                body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
+        
+                body.add(winnerName);
+                body.add(Box.createVerticalStrut(6));
+                body.add(submissionTitle);
+                body.add(Box.createVerticalStrut(6));
+                body.add(submissionId);
+                body.add(Box.createVerticalStrut(12));
+                body.add(scoreLabel);
+        
+                add(awardTitle, BorderLayout.NORTH);
+                add(body, BorderLayout.CENTER);
+            }
+        
+            public void setEmpty(String msg) {
+                winnerName.setText(msg);
+                submissionTitle.setText("");
+                submissionId.setText("");
+                scoreLabel.setText("");
+            }
+        
+            /** isPeopleChoice=true => show Total Marks label */
+            public void setAward(Award a, boolean isPeopleChoice) {
+                if (a == null || a.getWinner() == null) {
+                    setEmpty("Winner: Not yet determined");
                     return;
                 }
         
-                java.util.List<Award> awards = coordinator.computeAwards(eligible);
+                Submission w = a.getWinner();
+                String student = (w.getStudentName() == null) ? "Unknown" : w.getStudentName();
+                String title = (w.getTitle() == null) ? "" : w.getTitle();
         
-                StringBuilder sb = new StringBuilder();
-                for (Award a : awards) {
-                    sb.append(a.getDetails()).append("\n\n");
-                }
-                awardsArea.setText(sb.toString());
+                winnerName.setText("Winner: " + student);
+                submissionTitle.setText("Submission: " + title);
+                submissionId.setText("ID: " + w.getSubmissionId());
         
-            } catch (Exception ex) {
-                awardsArea.setText("Failed to compute awards: " + ex.getMessage());
+                String label = isPeopleChoice ? "Total Marks" : "Average Score";
+                scoreLabel.setText(label + ": " + String.format("%.2f", a.getWinningScore()));
             }
-        });
+        }
 
-        btnPanel.add(computeBtn);
-        panel.add(btnPanel, BorderLayout.NORTH);
-        panel.add(new JScrollPane(awardsArea), BorderLayout.CENTER);
-
-        return panel;
-    }
 
     // Actions 
     private void createSession() {
