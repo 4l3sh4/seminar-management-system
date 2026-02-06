@@ -19,6 +19,7 @@ public class Submission implements Serializable {
     private String filePath;
 
     private Student student;
+    private Session session;
     private List<Evaluation> evaluations;
 
     private String boardId; // For poster presentations
@@ -92,6 +93,15 @@ public class Submission implements Serializable {
         this.filePath = filePath;
     }
 
+    public Session getSession() {
+        return session;
+    }
+    
+    public void setSession(Session session) {
+        this.session = session;
+    }
+    
+    
     public Student getStudent() {
         return student;
     }
