@@ -225,9 +225,33 @@ public class DataManager {
         return result;
     }
     
+    public List<Session> getSessionsByEvaluatorId(String evaluatorId) {
+        List<Session> result = new ArrayList<>();
+        if (evaluatorId == null) return result;
+    
+        for (Session s : store.sessions) {
+            if (s == null) continue;
+    
+            // if Session stores Evaluator objects
+            try {
+                for (Evaluator e : s.getEvaluators()) {
+                    if (e != null && evaluatorId.equals(e.getUserId())) {
+                        result.add(s);
+                        break;
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+    
+        return result;
+    }
+
+
+    
     public Session findSessionBySubmissionId(String submissionId) {
         if (submissionId == null) return null;
-        for (Session s : store.sessions) {
+    
+        for (Session s : getSessions()) {
             if (s == null) continue;
             for (Submission sub : s.getSubmissions()) {
                 if (sub != null && submissionId.equals(sub.getSubmissionId())) return s;

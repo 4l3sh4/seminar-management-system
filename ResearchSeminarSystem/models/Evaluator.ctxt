@@ -1,6 +1,5 @@
 #BlueJ class context
 comment0.target=Evaluator
-comment0.text=\r\n\ Evaluator\ class\ -\ represents\ a\ panel\ member\ who\ evaluates\ presentations\r\n\ Updated\ for\ persistence\ (Serializable)\r\n
 comment1.params=userId\ name\ email\ password\ expertise
 comment1.target=Evaluator(java.lang.String,\ java.lang.String,\ java.lang.String,\ java.lang.String,\ java.lang.String)
 comment10.params=

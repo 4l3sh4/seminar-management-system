@@ -53,26 +53,34 @@ public class Coordinator extends User implements Serializable {
     
     public boolean assignSubmissionToSession(Session session, Submission submission) {
         if (session == null || submission == null) return false;
-    
         if (!managedSessions.contains(session)) {
             managedSessions.add(session);
         }
     
         session.addSubmission(submission);
+        //AUTO-ASSIGN BOARD ID (POSTER SUBMISSIONS ONLY)
+        if ("Poster".equalsIgnoreCase(submission.getPresentationType())) {
+            // assign only if not already assigned
+            if (submission.getBoardId() == null || submission.getBoardId().isBlank()) {
     
-        if ("Poster".equalsIgnoreCase(session.getSessionType())) {
-            if (submission.getBoardId() == null || submission.getBoardId().trim().isEmpty()) {
-                String v = (session.getVenue() == null)
-                        ? "VENUE"
-                        : session.getVenue().replaceAll("\\s+", "").toUpperCase();
-                int n = session.getSubmissions().size();
-                submission.setBoardId(v + "-" + n);
+                int count = 1;
+    
+                // count existing POSTER submissions with board IDs
+                for (Submission s : session.getSubmissions()) {
+                    if (s != null &&
+                        "Poster".equalsIgnoreCase(s.getPresentationType()) &&
+                        s.getBoardId() != null) {
+                        count++;
+                    }
+                }
+    
+                // clean, stable board ID
+                submission.setBoardId("P" + String.format("%02d", count));
             }
         }
-    
         return true;
     }
-
+    
     // Generate seminar schedule (String version)
     public String generateSchedule() {
         StringBuilder schedule = new StringBuilder();

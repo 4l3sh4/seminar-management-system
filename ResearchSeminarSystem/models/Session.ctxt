@@ -1,6 +1,5 @@
 #BlueJ class context
 comment0.target=Session
-comment0.text=\r\n\ Session\ class\ -\ represents\ a\ seminar\ session\r\n\ Updated\ for\ persistence\ (Serializable)\ +\ safer\ null\ handling\ +\ includes\ time\r\n
 comment1.params=sessionId\ date\ time\ venue\ sessionType
 comment1.target=Session(java.lang.String,\ java.lang.String,\ java.lang.String,\ java.lang.String,\ java.lang.String)
 comment10.params=
@@ -27,6 +26,10 @@ comment2.params=sessionId\ date\ venue\ sessionType
 comment2.target=Session(java.lang.String,\ java.lang.String,\ java.lang.String,\ java.lang.String)
 comment20.params=
 comment20.target=java.lang.String\ toString()
+comment21.params=o
+comment21.target=boolean\ equals(java.lang.Object)
+comment22.params=
+comment22.target=int\ hashCode()
 comment3.params=
 comment3.target=java.lang.String\ getSessionId()
 comment4.params=
@@ -41,4 +44,4 @@ comment8.params=
 comment8.target=java.lang.String\ getVenue()
 comment9.params=venue
 comment9.target=void\ setVenue(java.lang.String)
-numComments=21
+numComments=23

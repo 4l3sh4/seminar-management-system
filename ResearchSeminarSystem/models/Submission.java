@@ -147,6 +147,18 @@ public class Submission implements Serializable {
         }
         return (count == 0) ? 0.0 : total / count;
     }
+    
+    public double getTotalScore() {
+        List<Evaluation> evals = getEvaluations();
+        if (evals.isEmpty()) return 0.0;
+    
+        double total = 0.0;
+        for (Evaluation ev : evals) {
+            if (ev == null) continue;
+            total += ev.getTotalScore(); // same as avg logic, but no divide
+        }
+        return total;
+    }
 
     // Details 
 

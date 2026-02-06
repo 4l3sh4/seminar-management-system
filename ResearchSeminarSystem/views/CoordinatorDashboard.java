@@ -142,9 +142,15 @@ public class CoordinatorDashboard extends JFrame {
 
         sessionsWrap = wrap("Sessions", sessionTable);
         center.add(sessionsWrap);
+        
+        sessionTable.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2) openDetailsDialog();
+            }
+        });
 
         // Submissions table
-        String[] subCols = {"Submission ID", "Title", "Type", "Assigned Session", "Avg Score", "File"};
+        String[] subCols = {"Submission ID", "Title", "Type", "Assigned Session", "Board ID", "Avg Score", "File"};
         submissionModel = new DefaultTableModel(subCols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
@@ -156,11 +162,18 @@ public class CoordinatorDashboard extends JFrame {
         submissionTable.getColumnModel().getColumn(3).setPreferredWidth(110);
         submissionTable.getColumnModel().getColumn(4).setPreferredWidth(70);
         submissionTable.getColumnModel().getColumn(5).setPreferredWidth(80);
+        submissionTable.getColumnModel().getColumn(6).setPreferredWidth(80); // File
 
         submissionsWrap = wrap("Submissions", submissionTable);
         center.add(submissionsWrap);
         submissionSorter = new TableRowSorter<>(submissionModel);
         submissionTable.setRowSorter(submissionSorter);
+        
+        submissionTable.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2) openDetailsDialog();
+            }
+        });
         
         submissionTable.setDefaultRenderer(Object.class, new javax.swing.table.DefaultTableCellRenderer() {
             @Override
@@ -200,62 +213,76 @@ public class CoordinatorDashboard extends JFrame {
 
         evaluatorsWrap = wrap("Evaluators", evaluatorTable);
         center.add(evaluatorsWrap);
+        
+        evaluatorTable.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2) openDetailsDialog();
+            }
+        });
 
         panel.add(center, BorderLayout.CENTER);
 
         // Bottom: assign buttons
-        JPanel btnPanel = new JPanel();
-
-        JButton assignSubmissionBtn = new JButton("Assign Submission to Session");
-        assignSubmissionBtn.addActionListener(e -> assignSubmissionToSession());
-
-        JButton assignEvaluatorBtn = new JButton("Assign Evaluator to Session");
-        assignEvaluatorBtn.addActionListener(e -> assignEvaluatorToSession());
-
-        JButton viewSessionBtn = new JButton("View Session Details");
-        viewSessionBtn.addActionListener(e -> viewSessionDetails());
-
+        JPanel btnPanel = new JPanel(new BorderLayout(8, 8));
+        
+        // Top row: primary actions
+        JPanel primary = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 5));
+        JButton assignSubmissionBtn = new JButton("Assign Submission → Session");
+        JButton assignEvaluatorBtn = new JButton("Assign Evaluator → Session");
+        primary.add(assignSubmissionBtn);
+        primary.add(assignEvaluatorBtn);
+        
+        // Bottom row: secondary actions
+        JPanel secondary = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
+        
+        JButton viewDetailsBtn = new JButton("View Details");
         JButton editSessionBtn = new JButton("Edit Session");
+        
+        secondary.add(viewDetailsBtn);
+        secondary.add(editSessionBtn);
+        
+        btnPanel.add(primary, BorderLayout.NORTH);
+        btnPanel.add(secondary, BorderLayout.SOUTH);
+        
+        // listeners
+        assignSubmissionBtn.addActionListener(e -> assignSubmissionToSession());
+        assignEvaluatorBtn.addActionListener(e -> assignEvaluatorToSession());
+        viewDetailsBtn.addActionListener(e -> openDetailsDialog());
         editSessionBtn.addActionListener(e -> editSelectedSession());
-        btnPanel.add(editSessionBtn);
-
-        btnPanel.add(viewSessionBtn);
-        btnPanel.add(assignSubmissionBtn);
-        btnPanel.add(assignEvaluatorBtn);
-
+        
         panel.add(btnPanel, BorderLayout.SOUTH);
 
         return panel;
     }
 
-    private JPanel createReportsPanel() {
-        JPanel panel = new JPanel(new BorderLayout(10,10));
-        panel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
-
-        outputArea = new JTextArea();
-        outputArea.setLineWrap(true);
-        outputArea.setWrapStyleWord(true);
-
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-
-        JButton scheduleBtn = new JButton("Generate Schedule Report");
-        scheduleBtn.addActionListener(e -> generateScheduleReport());
-
-        JButton evalBtn = new JButton("Generate Evaluation Report");
-        evalBtn.addActionListener(e -> generateEvaluationReport());
-
-        JButton exportBtn = new JButton("Export Output to File");
-        exportBtn.addActionListener(e -> exportOutput());
-
-        btnPanel.add(scheduleBtn);
-        btnPanel.add(evalBtn);
-        btnPanel.add(exportBtn);
-
-        panel.add(btnPanel, BorderLayout.NORTH);
-        panel.add(new JScrollPane(outputArea), BorderLayout.CENTER);
-
-        return panel;
-    }
+        private JPanel createReportsPanel() {
+            JPanel panel = new JPanel(new BorderLayout(10,10));
+            panel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+    
+            outputArea = new JTextArea();
+            outputArea.setLineWrap(true);
+            outputArea.setWrapStyleWord(true);
+    
+            JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+    
+            JButton scheduleBtn = new JButton("Generate Schedule Report");
+            scheduleBtn.addActionListener(e -> generateScheduleReport());
+    
+            JButton evalBtn = new JButton("Generate Evaluation Report");
+            evalBtn.addActionListener(e -> generateEvaluationReport());
+    
+            JButton exportBtn = new JButton("Export Output to File");
+            exportBtn.addActionListener(e -> exportOutput());
+    
+            btnPanel.add(scheduleBtn);
+            btnPanel.add(evalBtn);
+            btnPanel.add(exportBtn);
+    
+            panel.add(btnPanel, BorderLayout.NORTH);
+            panel.add(new JScrollPane(outputArea), BorderLayout.CENTER);
+    
+            return panel;
+        }
 
     private JPanel createAwardsPanel() {
         JPanel panel = new JPanel(new BorderLayout(10,10));
@@ -489,23 +516,149 @@ public class CoordinatorDashboard extends JFrame {
         }
 
     }
-
-    private void viewSessionDetails() {
+    
+    private void openDetailsDialog() {
+        JDialog dialog = new JDialog(this, "Details", true);
+        dialog.setSize(650, 450);
+        dialog.setLocationRelativeTo(this);
+    
+        JTabbedPane tabs = new JTabbedPane();
+    
+        tabs.addTab("Session", buildSessionDetailsPanel());
+        tabs.addTab("Submission / Presenter", buildSubmissionDetailsPanel());
+        tabs.addTab("Evaluator", buildEvaluatorDetailsPanel());
+    
+        dialog.add(tabs);
+        dialog.setVisible(true);
+    }
+    
+    private JPanel buildSessionDetailsPanel() {
+        JTextArea area = new JTextArea();
+        area.setEditable(false);
+        area.setLineWrap(true);
+        area.setWrapStyleWord(true);
+    
         int row = sessionTable.getSelectedRow();
         if (row == -1) {
-            JOptionPane.showMessageDialog(this, "Please select a session.",
-                    "No Selection", JOptionPane.WARNING_MESSAGE);
-            return;
+            area.setText("Select a session in the Sessions table first.");
+        } else {
+            String sessionId = String.valueOf(sessionModel.getValueAt(row, 0));
+            Session session = dataManager.findSessionById(sessionId);
+            area.setText(session == null ? "Session not found." : session.getDetails());
         }
-
-        String sessionId = (String) sessionModel.getValueAt(row, 0);
-        Session session = dataManager.findSessionById(sessionId);
-
-        if (session != null) {
-            JOptionPane.showMessageDialog(this, session.getDetails(),
-                    "Session Details", JOptionPane.INFORMATION_MESSAGE);
-        }
+    
+        JPanel p = new JPanel(new BorderLayout());
+        p.add(new JScrollPane(area), BorderLayout.CENTER);
+        return p;
     }
+    
+    private JPanel buildSubmissionDetailsPanel() {
+        JTextArea area = new JTextArea();
+        area.setEditable(false);
+        area.setLineWrap(true);
+        area.setWrapStyleWord(true);
+    
+        int viewRow = submissionTable.getSelectedRow();
+        if (viewRow == -1) {
+            area.setText("Select a submission in the Submissions table first.");
+        } else {
+            int modelRow = submissionTable.convertRowIndexToModel(viewRow);
+            String submissionId = String.valueOf(submissionModel.getValueAt(modelRow, 0));
+            Submission sub = dataManager.findSubmissionById(submissionId);
+    
+            if (sub == null) {
+                area.setText("Submission not found.");
+            } else {
+                Student st = sub.getStudent();
+                String studentName = (st != null && st.getName() != null) ? st.getName() : "Unknown";
+                String studentId   = (st != null && st.getUserId() != null) ? st.getUserId() : "Unknown";
+                String email       = (st != null && st.getEmail() != null) ? st.getEmail() : "N/A";
+    
+                String supervisor = (sub.getSupervisorName() != null && !sub.getSupervisorName().isBlank())
+                        ? sub.getSupervisorName() : "N/A";
+    
+                String type = (sub.getPresentationType() != null) ? sub.getPresentationType() : "N/A";
+                String board = "N/A";
+                if ("Poster".equalsIgnoreCase(type)) {
+                    board = (sub.getBoardId() != null && !sub.getBoardId().isBlank()) ? sub.getBoardId() : "(Not assigned)";
+                }
+    
+                Session assigned = dataManager.findSessionBySubmissionId(sub.getSubmissionId());
+                String sessionInfo = (assigned == null)
+                        ? "Not assigned"
+                        : assigned.getSessionId() + " | " + assigned.getDate() + " " + assigned.getTime() + " | " + assigned.getVenue();
+    
+                area.setText(
+                        "=== PRESENTER ===\n" +
+                        "Name: " + studentName + "\n" +
+                        "Student ID: " + studentId + "\n" +
+                        "Email: " + email + "\n" +
+                        "Supervisor: " + supervisor + "\n\n" +
+                        "=== SUBMISSION ===\n" +
+                        "Submission ID: " + sub.getSubmissionId() + "\n" +
+                        "Title: " + (sub.getTitle() == null ? "" : sub.getTitle()) + "\n" +
+                        "Type: " + type + "\n" +
+                        "Board ID: " + board + "\n" +
+                        "Avg Score: " + String.format("%.2f", sub.getAverageScore()) + "\n\n" +
+                        "=== SESSION ===\n" +
+                        sessionInfo
+                );
+            }
+        }
+    
+        JPanel p = new JPanel(new BorderLayout());
+        p.add(new JScrollPane(area), BorderLayout.CENTER);
+        return p;
+    }
+    
+    private JPanel buildEvaluatorDetailsPanel() {
+        JTextArea area = new JTextArea();
+        area.setEditable(false);
+        area.setLineWrap(true);
+        area.setWrapStyleWord(true);
+    
+        int row = evaluatorTable.getSelectedRow();
+        if (row == -1) {
+            area.setText("Select an evaluator in the Evaluators table first.");
+        } else {
+            String evaluatorId = String.valueOf(evaluatorModel.getValueAt(row, 0));
+            Evaluator eval = dataManager.findEvaluatorById(evaluatorId);
+    
+            if (eval == null) {
+                area.setText("Evaluator not found.");
+            } else {
+                int evalCount = dataManager.getEvaluationsByEvaluator(evaluatorId).size();
+                java.util.List<Session> sessions = dataManager.getSessionsByEvaluatorId(evaluatorId);
+    
+                StringBuilder sb = new StringBuilder();
+                sb.append("=== EVALUATOR ===\n");
+                sb.append("ID: ").append(eval.getUserId()).append("\n");
+                sb.append("Name: ").append(eval.getName()).append("\n");
+                sb.append("Evaluations submitted: ").append(evalCount).append("\n\n");
+    
+                sb.append("=== ASSIGNED SESSIONS ===\n");
+                if (sessions.isEmpty()) {
+                    sb.append("No sessions assigned.\n");
+                } else {
+                    for (Session s : sessions) {
+                        sb.append("- ")
+                          .append(s.getSessionId()).append(" | ")
+                          .append(s.getDate()).append(" ")
+                          .append(s.getTime()).append(" | ")
+                          .append(s.getVenue()).append(" | ")
+                          .append(s.getSessionType()).append("\n");
+                    }
+                }
+    
+                area.setText(sb.toString());
+            }
+        }
+    
+        JPanel p = new JPanel(new BorderLayout());
+        p.add(new JScrollPane(area), BorderLayout.CENTER);
+        return p;
+    }
+
 
     private void generateScheduleReport() {
         try {
@@ -583,7 +736,8 @@ public class CoordinatorDashboard extends JFrame {
                     sub.getSubmissionId(),
                     title,
                     sub.getPresentationType(),
-                    assignedText, // NEW column
+                    assignedText, 
+                    sub.getBoardId() == null ? "-" : sub.getBoardId(),
                     String.format("%.2f", sub.getAverageScore()),
                     (sub.getFilePath() == null || sub.getFilePath().isEmpty()) ? "Not uploaded" : "Uploaded"
             });
