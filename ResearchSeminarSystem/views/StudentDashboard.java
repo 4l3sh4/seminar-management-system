@@ -68,7 +68,7 @@ public class StudentDashboard extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        String[] columns = {"ID", "Title", "Type", "File", "Avg Score", "Evaluations"};
+        String[] columns = {"ID", "Title", "Type", "Session", "File", "Avg Score", "Evaluations"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override public boolean isCellEditable(int row, int column) { return false; }
         };
@@ -79,12 +79,18 @@ public class StudentDashboard extends JFrame {
         JPanel buttonPanel = new JPanel();
         JButton viewButton = new JButton("View Details");
         JButton refreshButton = new JButton("Refresh");
-
+        JButton feedbackButton = new JButton("View Feedback");
+        JButton editButton = new  JButton("Edit Submission");
+        
         viewButton.addActionListener(e -> viewSubmissionDetails());
         refreshButton.addActionListener(e -> loadSubmissions());
+        feedbackButton.addActionListener(e -> viewFeedback());
+        editButton.addActionListener(e -> editSubmission());
 
         buttonPanel.add(viewButton);
         buttonPanel.add(refreshButton);
+        buttonPanel.add(feedbackButton);
+        buttonPanel.add(editButton);
 
         panel.add(buttonPanel, BorderLayout.SOUTH);
         return panel;
@@ -162,7 +168,7 @@ public class StudentDashboard extends JFrame {
         submitButton.setForeground(Color.WHITE);
         submitButton.addActionListener(e -> registerSubmission());
         panel.add(submitButton, gbc);
-
+        
         return panel;
     }
 
@@ -222,13 +228,19 @@ public class StudentDashboard extends JFrame {
     private void loadSubmissions() {
         tableModel.setRowCount(0);
         for (Submission sub : student.getSubmissions()) {
+            Session s = sub.getSession();
+            String sessionInfo = (s == null)
+                    ? "Not Assigned"
+                    : s.getSessionId();
+
             tableModel.addRow(new Object[]{
                     sub.getSubmissionId(),
                     sub.getTitle(),
                     sub.getPresentationType(),
+                    sessionInfo,
                     (sub.getFilePath() == null || sub.getFilePath().isEmpty()) ? "Not uploaded" : "Uploaded",
                     String.format("%.2f", sub.getAverageScore()),
-                    (sub.getEvaluations() == null) ? 0 : sub.getEvaluations().size()
+                    sub.getEvaluations().size()
             });
         }
     }
@@ -261,6 +273,190 @@ public class StudentDashboard extends JFrame {
         }
     }
 
+    private void viewFeedback() {
+        int selectedRow = submissionTable.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a submission", "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        String submissionId = (String) tableModel.getValueAt(selectedRow, 0);
+        Submission submission = null;
+        
+        for (Submission sub : student.getSubmissions()) {
+            if (sub != null && submissionId.equals(sub.getSubmissionId())) {
+                submission = sub;
+                break;
+            }
+        }
+        
+        if(submission == null || submission.getEvaluations().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No evaluation yet for this submission.", "No Feedback", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        
+        StringBuilder feedback = new StringBuilder();
+        for (Evaluation ev : submission.getEvaluations()) {
+            feedback.append(ev.getDetails()).append("\n\n");
+        }
+        
+        JOptionPane.showMessageDialog(this, feedback.toString(), "Evaluation Feedback", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void editSubmission() {
+        int selectedRow = submissionTable.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a submission to edit.", "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String submissionId = (String) tableModel.getValueAt(selectedRow, 0);
+        Submission submission = null;
+
+        for (Submission sub : student.getSubmissions()) {
+            if (sub != null && submissionId.equals(sub.getSubmissionId())) {
+                submission = sub;
+                break;
+            }
+        }
+
+        if (submission == null) return;
+
+        //Block editing afte evaluation
+        if (!submission.getEvaluations().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "This submission has already been evaluated and cannot be edited.", "Edit Not Allowed", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        //edit form
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBorder(BorderFactory.createEmptyBorder(15,20,15,20));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(6, 6, 6, 6);
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.NONE;
+
+        int row = 0;
+
+        // ===== Research Title =====
+        gbc.gridx = 0; gbc.gridy = row;
+        panel.add(new JLabel("Research Title:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        JTextField titleField = new JTextField(submission.getTitle(), 25);
+        panel.add(titleField, gbc);
+
+        // ===== Abstract =====
+        row++;
+        gbc.gridx = 0; gbc.gridy = row;
+        gbc.fill = GridBagConstraints.NONE;
+        panel.add(new JLabel("Abstract:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        JTextArea abstractArea = new JTextArea(submission.getAbstractText(), 4, 25);
+        abstractArea.setLineWrap(true);
+        abstractArea.setWrapStyleWord(true);
+        panel.add(new JScrollPane(abstractArea), gbc);
+
+        // ===== Supervisor =====
+        row++;
+        gbc.gridx = 0; gbc.gridy = row;
+        gbc.fill = GridBagConstraints.NONE;
+        panel.add(new JLabel("Supervisor:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        JTextField supervisorField = new JTextField(submission.getSupervisorName(), 25);
+        panel.add(supervisorField, gbc);
+
+        // ===== Presentation Type =====
+        row++;
+        gbc.gridx = 0; gbc.gridy = row;
+        gbc.fill = GridBagConstraints.NONE;
+        panel.add(new JLabel("Presentation Type:"), gbc);
+
+        gbc.gridx = 1;
+        JRadioButton oralRadio = new JRadioButton("Oral");
+        JRadioButton posterRadio = new JRadioButton("Poster");
+
+        ButtonGroup typeGroup = new ButtonGroup();
+        typeGroup.add(oralRadio);
+        typeGroup.add(posterRadio);
+
+        if ("Poster".equalsIgnoreCase(submission.getPresentationType())) {
+            posterRadio.setSelected(true);
+        } else {
+            oralRadio.setSelected(true);
+        }
+
+        JPanel radioPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        radioPanel.add(oralRadio);
+        radioPanel.add(posterRadio);
+        panel.add(radioPanel, gbc);
+
+        // ===== File Upload =====
+        row++;
+        gbc.gridx = 0; gbc.gridy = row;
+        panel.add(new JLabel("Upload File:"), gbc);
+
+        gbc.gridx = 1;
+        JPanel filePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        JTextField fileField = new JTextField(
+                submission.getFilePath() == null ? "" : submission.getFilePath(),
+                18
+        );
+        fileField.setEditable(false);
+
+        JButton browseButton = new JButton("Browse");
+        browseButton.addActionListener(e -> {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            chooser.setAcceptAllFileFilterUsed(true);
+            chooser.addChoosableFileFilter(
+                    new FileNameExtensionFilter("Documents (PDF/DOC/DOCX)", "pdf", "doc", "docx")
+            );
+
+            int res = chooser.showOpenDialog(this);
+            if (res == JFileChooser.APPROVE_OPTION) {
+                File selected = chooser.getSelectedFile();
+                fileField.setText(selected.getAbsolutePath());
+            }
+        });
+
+        filePanel.add(fileField);
+        filePanel.add(browseButton);
+        panel.add(filePanel, gbc);
+
+        // ===== Dialog =====
+        int result = JOptionPane.showConfirmDialog(
+                this,
+                panel,
+                "Edit Submission",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        if (result == JOptionPane.OK_OPTION) {
+            submission.setTitle(titleField.getText().trim());
+            submission.setAbstractText(abstractArea.getText().trim());
+            submission.setSupervisorName(supervisorField.getText().trim());
+            submission.setPresentationType(oralRadio.isSelected() ? "Oral" : "Poster");
+            submission.setFilePath(fileField.getText().trim());
+
+            dataManager.saveToDisk();
+            loadSubmissions();
+
+            JOptionPane.showMessageDialog(this,
+                    "Submission updated successfully.",
+                    "Update Complete",
+                    JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+    
+    
     private void logout() {
         int confirm = JOptionPane.showConfirmDialog(this,
                 "Are you sure you want to logout?",
