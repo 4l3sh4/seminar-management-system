@@ -57,16 +57,16 @@ public class EvaluatorDashboard extends JFrame {
         loadMySessions();
         loadMyEvaluations();
 
-        showStep(setWindowIcon() {
+        showStep("STEP1");
+    }
+
+    private void setWindowIcon() {
         try {
             BufferedImage img = ImageIO.read(new File("img/mmu.png"));
             setIconImage(img);
         } catch (Exception e) {
             // Icon file not found, continue without icon
         }
-    }
-
-    private void "STEP1");
     }
 
     private void initializeUI() {
