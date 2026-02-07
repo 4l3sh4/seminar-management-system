@@ -229,6 +229,15 @@ public class LoginFrame extends JFrame {
                 return;
             }
 
+            // Check password length
+            if (password.length() < 4) {
+                JOptionPane.showMessageDialog(dialog,
+                        "Password must be at least 4 characters long.",
+                        "Validation Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             // Simple phone validation
             if (!email.matches("^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^-]+(?:\\.[a-zA-Z0-9_!#$%&'*+/=?`{|}~^-]+)*@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*$")) {
                 JOptionPane.showMessageDialog(dialog,
@@ -238,10 +247,28 @@ public class LoginFrame extends JFrame {
                 return;
             }
 
+            // Check if email already exists
+            if (dataManager.emailExists(email)) {
+                JOptionPane.showMessageDialog(dialog,
+                        "This email has already been used.",
+                        "Validation Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             // Simple phone validation
             if (!contact.matches("[0-9+()\\-\\s]{7,20}")) {
                 JOptionPane.showMessageDialog(dialog,
                         "Please enter a valid contact number (digits and + - ( ) only).",
+                        "Validation Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Check if phone number already exists
+            if (dataManager.phoneNumberExists(contact)) {
+                JOptionPane.showMessageDialog(dialog,
+                        "This phone number has already been used.",
                         "Validation Error",
                         JOptionPane.ERROR_MESSAGE);
                 return;
@@ -316,7 +343,7 @@ public class LoginFrame extends JFrame {
     private static void setContactIfPossible(Object userObj, String contact) {
         if (userObj == null) return;
 
-        String[] setterNames = {"setContactNumber", "setPhoneNumber", "setContactNo", "setPhone"};
+        String[] setterNames = {"setPhoneNumber", "setContactNumber", "setContactNo", "setPhone"};
         for (String setter : setterNames) {
             if (invokeIfExistsWithArg(userObj, setter, String.class, contact)) {
                 return;

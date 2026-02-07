@@ -7,6 +7,8 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 // CoordinatorDashboard - Interface for coordinators to manage sessions, assignments, reports and awards
 
@@ -317,18 +319,54 @@ public class CoordinatorDashboard extends JFrame {
         
             // Button action
             computeBtn.addActionListener(e -> {
+                List<Session> sessions = dataManager.getSessions();
+                if (sessions.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "No sessions available.",
+                            "No Data", JOptionPane.INFORMATION_MESSAGE);
+                    return;
+                }
+
+                // Show dialog to select session or all sessions
+                String[] options = new String[sessions.size() + 1];
+                options[0] = "All Sessions";
+                for (int i = 0; i < sessions.size(); i++) {
+                    Session s = sessions.get(i);
+                    options[i + 1] = s.getSessionId() + " - " + s.getDate() + " " + s.getTime() + " (" + s.getVenue() + ")";
+                }
+
+                int choice = JOptionPane.showOptionDialog(CoordinatorDashboard.this,
+                        "Select a session to compute awards for:",
+                        "Session Selection",
+                        JOptionPane.DEFAULT_OPTION,
+                        JOptionPane.QUESTION_MESSAGE,
+                        null,
+                        options,
+                        options[0]);
+
+                if (choice == -1) return; // User cancelled
+
                 try {
-                    java.util.List<Submission> eligible = new java.util.ArrayList<>();
-                    for (Submission s : dataManager.getSubmissions()) {
-                        if (s != null && s.getEvaluations() != null && !s.getEvaluations().isEmpty()) {
-                            eligible.add(s);
+                    List<Session> selectedSessions = new ArrayList<>();
+                    if (choice == 0) {
+                        selectedSessions.addAll(sessions);
+                    } else {
+                        selectedSessions.add(sessions.get(choice - 1));
+                    }
+
+                    // Get eligible submissions from selected sessions
+                    java.util.List<Submission> eligible = new ArrayList<>();
+                    for (Session s : selectedSessions) {
+                        for (Submission sub : s.getSubmissions()) {
+                            if (sub != null && sub.getEvaluations() != null && !sub.getEvaluations().isEmpty()) {
+                                eligible.add(sub);
+                            }
                         }
                     }
         
                     if (eligible.isEmpty()) {
-                        oralCard.setEmpty("No eligible submissions yet.");
-                        posterCard.setEmpty("No eligible submissions yet.");
-                        peopleCard.setEmpty("No eligible submissions yet.");
+                        oralCard.setEmpty("No eligible submissions in selected session(s).");
+                        posterCard.setEmpty("No eligible submissions in selected session(s).");
+                        peopleCard.setEmpty("No eligible submissions in selected session(s).");
                         return;
                     }
         
@@ -449,6 +487,22 @@ public class CoordinatorDashboard extends JFrame {
             return;
         }
 
+        // Validate date format (DD/MM/YYYY)
+        if (!date.matches("^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\\d{4}$")) {
+            JOptionPane.showMessageDialog(this,
+                    "Invalid date format. Please use DD/MM/YYYY (e.g., 31/01/2026).",
+                    "Validation Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Validate time format if provided (basic validation like 10AM, 2:30PM, 14:30, etc.)
+        if (!time.isEmpty() && !isValidTimeFormat(time)) {
+            JOptionPane.showMessageDialog(this,
+                    "Invalid time format. Examples: 10AM, 2:30PM, 14:30, 9:00",
+                    "Validation Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         try {
             Session session = coordinator.createSession(date, venue, type);
 
@@ -470,6 +524,11 @@ public class CoordinatorDashboard extends JFrame {
             JOptionPane.showMessageDialog(this, "Failed to create session: " + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private boolean isValidTimeFormat(String time) {
+        // Accept formats like: 10AM, 10:30AM, 14:30, 2:30PM, 09:00, etc.
+        return time.matches("^([0-1]?[0-9]|2[0-3])(:[0-5][0-9])?(AM|PM|am|pm)?$");
     }
     
     private void editSelectedSession() {
@@ -765,8 +824,44 @@ public class CoordinatorDashboard extends JFrame {
 
 
     private void generateScheduleReport() {
+        List<Session> sessions = dataManager.getSessions();
+        if (sessions.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No sessions available.",
+                    "No Data", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        // Show dialog to select session or all sessions
+        String[] options = new String[sessions.size() + 1];
+        options[0] = "All Sessions";
+        for (int i = 0; i < sessions.size(); i++) {
+            Session s = sessions.get(i);
+            options[i + 1] = s.getSessionId() + " - " + s.getDate() + " " + s.getTime() + " (" + s.getVenue() + ")";
+        }
+
+        int choice = JOptionPane.showOptionDialog(this,
+                "Select a session for the schedule report:",
+                "Session Selection",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]);
+
+        if (choice == -1) return; // User cancelled
+
         try {
-            Report r = coordinator.generateScheduleReport(dataManager.getSessions());
+            Report r;
+            if (choice == 0) {
+                // All sessions
+                r = coordinator.generateScheduleReport(sessions);
+            } else {
+                // Specific session
+                Session selected = sessions.get(choice - 1);
+                List<Session> singleSession = new ArrayList<>();
+                singleSession.add(selected);
+                r = coordinator.generateScheduleReport(singleSession);
+            }
             outputArea.setText(r.getDetails());
         } catch (Exception ex) {
             outputArea.setText("Failed to generate schedule report: " + ex.getMessage());
@@ -774,8 +869,44 @@ public class CoordinatorDashboard extends JFrame {
     }
 
     private void generateEvaluationReport() {
+        List<Session> sessions = dataManager.getSessions();
+        if (sessions.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No sessions available.",
+                    "No Data", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        // Show dialog to select session or all sessions
+        String[] options = new String[sessions.size() + 1];
+        options[0] = "All Sessions";
+        for (int i = 0; i < sessions.size(); i++) {
+            Session s = sessions.get(i);
+            options[i + 1] = s.getSessionId() + " - " + s.getDate() + " " + s.getTime() + " (" + s.getVenue() + ")";
+        }
+
+        int choice = JOptionPane.showOptionDialog(this,
+                "Select a session for the evaluation report:",
+                "Session Selection",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]);
+
+        if (choice == -1) return; // User cancelled
+
         try {
-            Report r = coordinator.generateEvaluationReport(dataManager.getSessions());
+            Report r;
+            if (choice == 0) {
+                // All sessions
+                r = coordinator.generateEvaluationReport(sessions);
+            } else {
+                // Specific session
+                Session selected = sessions.get(choice - 1);
+                List<Session> singleSession = new ArrayList<>();
+                singleSession.add(selected);
+                r = coordinator.generateEvaluationReport(singleSession);
+            }
             outputArea.setText(r.getDetails());
         } catch (Exception ex) {
             outputArea.setText("Failed to generate evaluation report: " + ex.getMessage());

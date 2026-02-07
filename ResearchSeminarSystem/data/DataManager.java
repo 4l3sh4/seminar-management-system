@@ -97,6 +97,28 @@ public class DataManager {
         return false;
     }
 
+    public boolean emailExists(String email) {
+        if (email == null || email.trim().isEmpty()) return false;
+        email = email.toLowerCase();
+        for (User u : store.users) {
+            if (u != null && u.getEmail() != null && u.getEmail().toLowerCase().equals(email)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean phoneNumberExists(String phoneNumber) {
+        if (phoneNumber == null || phoneNumber.trim().isEmpty()) return false;
+        phoneNumber = phoneNumber.trim();
+        for (User u : store.users) {
+            if (u != null && u.getPhoneNumber() != null && u.getPhoneNumber().equals(phoneNumber)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Getters
     public List<User> getUsers() { return store.users; }
     public List<Student> getStudents() { return store.students; }

@@ -10,6 +10,7 @@ public abstract class User implements Serializable {
     protected String userId;
     protected String name;
     protected String email;
+    protected String phoneNumber;
     protected String password;
     protected String role; // "Student", "Evaluator", "Coordinator"
 
@@ -17,6 +18,7 @@ public abstract class User implements Serializable {
         this.userId = userId;
         this.name = name;
         this.email = email;
+        this.phoneNumber = "";
         this.password = password;
         this.role = role;
     }
@@ -44,6 +46,14 @@ public abstract class User implements Serializable {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber != null ? phoneNumber : "";
     }
 
     public String getPassword() {

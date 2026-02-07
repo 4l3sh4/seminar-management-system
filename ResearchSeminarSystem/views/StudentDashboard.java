@@ -7,6 +7,8 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 // StudentDashboard - Interface for students to register and manage submissions
 
@@ -81,16 +83,19 @@ public class StudentDashboard extends JFrame {
         JButton refreshButton = new JButton("Refresh");
         JButton feedbackButton = new JButton("View Feedback");
         JButton editButton = new  JButton("Edit Submission");
+        JButton deleteButton = new JButton("Delete Submission");
         
         viewButton.addActionListener(e -> viewSubmissionDetails());
         refreshButton.addActionListener(e -> loadSubmissions());
         feedbackButton.addActionListener(e -> viewFeedback());
         editButton.addActionListener(e -> editSubmission());
+        deleteButton.addActionListener(e -> deleteSubmission());
 
         buttonPanel.add(viewButton);
         buttonPanel.add(refreshButton);
         buttonPanel.add(feedbackButton);
         buttonPanel.add(editButton);
+        buttonPanel.add(deleteButton);
 
         panel.add(buttonPanel, BorderLayout.SOUTH);
         return panel;
@@ -176,9 +181,9 @@ public class StudentDashboard extends JFrame {
         JFileChooser chooser = new JFileChooser();
         chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 
-        // optional: filter common document types
+        // Filter for presentation files only
         chooser.setAcceptAllFileFilterUsed(true);
-        chooser.addChoosableFileFilter(new FileNameExtensionFilter("Documents (PDF/DOC/DOCX)", "pdf", "doc", "docx"));
+        chooser.addChoosableFileFilter(new FileNameExtensionFilter("Presentation Files (PPTX/PDF/ODP)", "pptx", "pdf", "odp"));
 
         int result = chooser.showOpenDialog(StudentDashboard.this);
         if (result == JFileChooser.APPROVE_OPTION) {
@@ -204,6 +209,45 @@ public class StudentDashboard extends JFrame {
             return;
         }
 
+        // Validate title length
+        if (title.length() < 10) {
+            JOptionPane.showMessageDialog(this,
+                    "Research Title must be at least 10 characters long.",
+                    "Validation Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Validate abstract length
+        if (abstractText.length() < 50) {
+            JOptionPane.showMessageDialog(this,
+                    "Abstract must be at least 50 characters long.",
+                    "Validation Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Validate supervisor
+        if (supervisor.isEmpty() || supervisor.length() < 5) {
+            JOptionPane.showMessageDialog(this,
+                    "Supervisor name must be at least 5 characters long.",
+                    "Validation Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Validate file type if provided
+        if (!filePath.isEmpty()) {
+            String extension = getFileExtension(filePath).toLowerCase();
+            if (!isValidFileType(extension)) {
+                JOptionPane.showMessageDialog(this,
+                        "Invalid file type. Only .pptx, .pdf, and .odp files are allowed.",
+                        "Validation Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        }
+
         Submission submission = student.registerSubmission(title, abstractText, supervisor, type, filePath);
 
         // Update student's default supervisor name for next time
@@ -223,6 +267,18 @@ public class StudentDashboard extends JFrame {
         oralRadio.setSelected(true);
 
         loadSubmissions();
+    }
+
+    private String getFileExtension(String filePath) {
+        int lastDot = filePath.lastIndexOf('.');
+        if (lastDot > 0 && lastDot < filePath.length() - 1) {
+            return filePath.substring(lastDot + 1);
+        }
+        return "";
+    }
+
+    private boolean isValidFileType(String extension) {
+        return extension.equals("pptx") || extension.equals("pdf") || extension.equals("odp");
     }
 
     private void loadSubmissions() {
@@ -295,12 +351,79 @@ public class StudentDashboard extends JFrame {
             return;
         }
         
-        StringBuilder feedback = new StringBuilder();
-        for (Evaluation ev : submission.getEvaluations()) {
-            feedback.append(ev.getDetails()).append("\n\n");
+        // Create a pagination dialog for feedback
+        showFeedbackPaginationDialog(submission);
+    }
+
+    private void showFeedbackPaginationDialog(Submission submission) {
+        JDialog dialog = new JDialog(this, "Evaluation Feedback", true);
+        dialog.setSize(650, 400);
+        dialog.setLocationRelativeTo(this);
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+
+        List<Evaluation> evaluations = submission.getEvaluations();
+        final int[] currentIndex = {0};
+
+        JTextArea feedbackArea = new JTextArea();
+        feedbackArea.setEditable(false);
+        feedbackArea.setLineWrap(true);
+        feedbackArea.setWrapStyleWord(true);
+        feedbackArea.setFont(new Font("Arial", Font.PLAIN, 12));
+
+        JLabel pageLabel = new JLabel("Evaluation 1 of " + evaluations.size());
+        pageLabel.setFont(new Font("Arial", Font.BOLD, 12));
+        pageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        // Display first evaluation
+        if (!evaluations.isEmpty()) {
+            feedbackArea.setText(evaluations.get(0).getDetails());
         }
-        
-        JOptionPane.showMessageDialog(this, feedback.toString(), "Evaluation Feedback", JOptionPane.INFORMATION_MESSAGE);
+
+        JPanel navigationPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
+
+        JButton prevButton = new JButton("Previous");
+        JButton nextButton = new JButton("Next");
+        JButton closeButton = new JButton("Close");
+
+        prevButton.addActionListener(e -> {
+            if (currentIndex[0] > 0) {
+                currentIndex[0]--;
+                feedbackArea.setText(evaluations.get(currentIndex[0]).getDetails());
+                pageLabel.setText("Evaluation " + (currentIndex[0] + 1) + " of " + evaluations.size());
+                prevButton.setEnabled(currentIndex[0] > 0);
+                nextButton.setEnabled(currentIndex[0] < evaluations.size() - 1);
+            }
+        });
+
+        nextButton.addActionListener(e -> {
+            if (currentIndex[0] < evaluations.size() - 1) {
+                currentIndex[0]++;
+                feedbackArea.setText(evaluations.get(currentIndex[0]).getDetails());
+                pageLabel.setText("Evaluation " + (currentIndex[0] + 1) + " of " + evaluations.size());
+                prevButton.setEnabled(currentIndex[0] > 0);
+                nextButton.setEnabled(currentIndex[0] < evaluations.size() - 1);
+            }
+        });
+
+        closeButton.addActionListener(e -> dialog.dispose());
+
+        // Disable previous button initially
+        prevButton.setEnabled(false);
+        // Disable next button if only one evaluation
+        nextButton.setEnabled(evaluations.size() > 1);
+
+        navigationPanel.add(prevButton);
+        navigationPanel.add(pageLabel);
+        navigationPanel.add(nextButton);
+        navigationPanel.add(closeButton);
+
+        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        mainPanel.add(new JScrollPane(feedbackArea), BorderLayout.CENTER);
+        mainPanel.add(navigationPanel, BorderLayout.SOUTH);
+
+        dialog.add(mainPanel);
+        dialog.setVisible(true);
     }
 
     private void editSubmission() {
@@ -466,6 +589,54 @@ public class StudentDashboard extends JFrame {
         if (confirm == JOptionPane.YES_OPTION) {
             dispose();
             new LoginFrame().setVisible(true);
+        }
+    }
+
+    private void deleteSubmission() {
+        int selectedRow = submissionTable.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Please select a submission to delete.",
+                    "No Selection",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String submissionId = (String) tableModel.getValueAt(selectedRow, 0);
+        Submission submission = null;
+
+        for (Submission sub : student.getSubmissions()) {
+            if (sub != null && submissionId.equals(sub.getSubmissionId())) {
+                submission = sub;
+                break;
+            }
+        }
+
+        if (submission == null) return;
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to delete submission:\n\"" + submission.getTitle() + "\"?\n\nThis action cannot be undone.",
+                "Confirm Delete",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            student.getSubmissions().remove(submission);
+            dataManager.getSubmissions().remove(submission);
+            
+            // Remove any evaluations associated with this submission
+            List<Evaluation> evaluationsToRemove = new ArrayList<>(submission.getEvaluations());
+            for (Evaluation eval : evaluationsToRemove) {
+                dataManager.removeEvaluation(eval);
+            }
+            
+            dataManager.saveToDisk();
+            loadSubmissions();
+
+            JOptionPane.showMessageDialog(this,
+                    "Submission deleted successfully.",
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE);
         }
     }
 }
