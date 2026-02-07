@@ -286,8 +286,8 @@ public class CoordinatorDashboard extends JFrame {
         // Top row: primary actions
         JPanel primary = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 8));
         primary.setOpaque(false);
-        JButton assignSubmissionBtn = new JButton("Assign Submission → Session");
-        JButton assignEvaluatorBtn = new JButton("Assign Evaluator → Session");
+        JButton assignSubmissionBtn = new JButton("Assign Submission to Session");
+        JButton assignEvaluatorBtn = new JButton("Assign Evaluator to Session");
         
         for (JButton btn : new JButton[]{assignSubmissionBtn, assignEvaluatorBtn}) {
             btn.setFont(new Font("Arial", Font.BOLD, 13));
