@@ -58,6 +58,7 @@ public class Coordinator extends User implements Serializable {
         }
     
         session.addSubmission(submission);
+           submission.setSession(session);
         //AUTO-ASSIGN BOARD ID (POSTER SUBMISSIONS ONLY)
         if ("Poster".equalsIgnoreCase(submission.getPresentationType())) {
             // assign only if not already assigned
