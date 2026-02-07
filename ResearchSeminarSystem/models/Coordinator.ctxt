@@ -1,6 +1,5 @@
 #BlueJ class context
 comment0.target=Coordinator
-comment0.text=\r\n\ Coordinator\ class\ -\ represents\ faculty\ staff\ managing\ the\ seminar\r\n\ Updated\ for\ persistence\ (Serializable)\r\n
 comment1.params=userId\ name\ email\ password\ department
 comment1.target=Coordinator(java.lang.String,\ java.lang.String,\ java.lang.String,\ java.lang.String,\ java.lang.String)
 comment10.params=sessions

@@ -8,6 +8,9 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.lang.reflect.Method;
 import java.util.List;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
 
 // LoginFrame - Main login interface for the Seminar Management System
 
@@ -28,8 +31,20 @@ public class LoginFrame extends JFrame {
         invokeIfExists(dataManager, "loadData");
 
         applyBiggerUIFont();
+        
+        // Set window icon
+        setWindowIcon();
 
         initializeUI();
+    }
+
+    private void setWindowIcon() {
+        try {
+            BufferedImage img = ImageIO.read(new File("img/mmu.png"));
+            setIconImage(img);
+        } catch (Exception e) {
+            // Icon file not found, continue without icon
+        }
     }
 
     private void initializeUI() {

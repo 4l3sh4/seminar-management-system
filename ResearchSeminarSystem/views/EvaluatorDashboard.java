@@ -11,6 +11,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 
 // Evaluator Dashboard
 
@@ -47,12 +49,24 @@ public class EvaluatorDashboard extends JFrame {
         this.evaluator = evaluator;
         this.dataManager = DataManager.getInstance();
 
+        // Set window icon
+        setWindowIcon();
+
         initializeUI();
 
         loadMySessions();
         loadMyEvaluations();
 
-        showStep("STEP1");
+        showStep(setWindowIcon() {
+        try {
+            BufferedImage img = ImageIO.read(new File("img/mmu.png"));
+            setIconImage(img);
+        } catch (Exception e) {
+            // Icon file not found, continue without icon
+        }
+    }
+
+    private void "STEP1");
     }
 
     private void initializeUI() {

@@ -9,6 +9,9 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
 
 // CoordinatorDashboard - Interface for coordinators to manage sessions, assignments, reports and awards
 
@@ -35,6 +38,10 @@ public class CoordinatorDashboard extends JFrame {
     private JTextField venueField;
     private JComboBox<String> typeBox;
     
+    private JComboBox<String> scheduleSessionCombo;
+    private JComboBox<String> evaluationSessionCombo;
+    private JComboBox<String> awardsSessionCombo;
+    
     private JPanel sessionsWrap;
     private JPanel submissionsWrap;
     private JPanel evaluatorsWrap;
@@ -43,10 +50,23 @@ public class CoordinatorDashboard extends JFrame {
     public CoordinatorDashboard(Coordinator coordinator) {
         this.coordinator = coordinator;
         this.dataManager = DataManager.getInstance();
+        
+        // Set window icon
+        setWindowIcon();
+        
         initializeUI();
         loadSessions();
         loadSubmissions();
         loadEvaluators();
+    }
+
+    private void setWindowIcon() {
+        try {
+            BufferedImage img = ImageIO.read(new File("img/mmu.png"));
+            setIconImage(img);
+        } catch (Exception e) {
+            // Icon file not found, continue without icon
+        }
     }
 
     private void initializeUI() {
@@ -239,9 +259,15 @@ public class CoordinatorDashboard extends JFrame {
         
         JButton viewDetailsBtn = new JButton("View Details");
         JButton editSessionBtn = new JButton("Edit Session");
+        JButton deleteSessionBtn = new JButton("Delete Session");
+        JButton unassignSubmissionBtn = new JButton("Unassign Submission");
+        JButton unassignEvaluatorBtn = new JButton("Unassign Evaluator");
         
         secondary.add(viewDetailsBtn);
         secondary.add(editSessionBtn);
+        secondary.add(deleteSessionBtn);
+        secondary.add(unassignSubmissionBtn);
+        secondary.add(unassignEvaluatorBtn);
         
         btnPanel.add(primary, BorderLayout.NORTH);
         btnPanel.add(secondary, BorderLayout.SOUTH);
@@ -251,6 +277,9 @@ public class CoordinatorDashboard extends JFrame {
         assignEvaluatorBtn.addActionListener(e -> assignEvaluatorToSession());
         viewDetailsBtn.addActionListener(e -> openDetailsDialog());
         editSessionBtn.addActionListener(e -> editSelectedSession());
+        deleteSessionBtn.addActionListener(e -> deleteSelectedSession());
+        unassignSubmissionBtn.addActionListener(e -> unassignSubmissionFromSession());
+        unassignEvaluatorBtn.addActionListener(e -> unassignEvaluatorFromSession());
         
         panel.add(btnPanel, BorderLayout.SOUTH);
 
@@ -265,22 +294,41 @@ public class CoordinatorDashboard extends JFrame {
             outputArea.setLineWrap(true);
             outputArea.setWrapStyleWord(true);
     
-            JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-    
-            JButton scheduleBtn = new JButton("Generate Schedule Report");
+            // Schedule Report Section
+            JPanel schedulePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
+            schedulePanel.setBorder(BorderFactory.createTitledBorder("Schedule Report"));
+            scheduleSessionCombo = new JComboBox<>();
+            JButton scheduleBtn = new JButton("Generate");
             scheduleBtn.addActionListener(e -> generateScheduleReport());
-    
-            JButton evalBtn = new JButton("Generate Evaluation Report");
+            schedulePanel.add(new JLabel("Session:"));
+            schedulePanel.add(scheduleSessionCombo);
+            schedulePanel.add(scheduleBtn);
+
+            // Evaluation Report Section
+            JPanel evalPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
+            evalPanel.setBorder(BorderFactory.createTitledBorder("Evaluation Report"));
+            evaluationSessionCombo = new JComboBox<>();
+            JButton evalBtn = new JButton("Generate");
             evalBtn.addActionListener(e -> generateEvaluationReport());
-    
+            evalPanel.add(new JLabel("Session:"));
+            evalPanel.add(evaluationSessionCombo);
+            evalPanel.add(evalBtn);
+
+            // Export
+            JPanel exportPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
             JButton exportBtn = new JButton("Export Output to File");
             exportBtn.addActionListener(e -> exportOutput());
-    
-            btnPanel.add(scheduleBtn);
-            btnPanel.add(evalBtn);
-            btnPanel.add(exportBtn);
-    
-            panel.add(btnPanel, BorderLayout.NORTH);
+            exportPanel.add(exportBtn);
+
+            // Top controls
+            JPanel topPanel = new JPanel(new BorderLayout(10, 10));
+            topPanel.add(schedulePanel, BorderLayout.NORTH);
+            JPanel middle = new JPanel(new BorderLayout());
+            middle.add(evalPanel, BorderLayout.NORTH);
+            middle.add(exportPanel, BorderLayout.CENTER);
+            topPanel.add(middle, BorderLayout.CENTER);
+
+            panel.add(topPanel, BorderLayout.NORTH);
             panel.add(new JScrollPane(outputArea), BorderLayout.CENTER);
     
             return panel;
@@ -291,17 +339,20 @@ public class CoordinatorDashboard extends JFrame {
             panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
         
             // Top toolbar
-            JPanel top = new JPanel(new BorderLayout());
+            JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
             JLabel title = new JLabel("Awards Results");
             title.setFont(new Font("Arial", Font.BOLD, 16));
-            top.add(title, BorderLayout.WEST);
+            top.add(title);
         
+            awardsSessionCombo = new JComboBox<>();
             JButton computeBtn = new JButton("Compute Awards");
             computeBtn.setBackground(new Color(46, 204, 113));
             computeBtn.setForeground(Color.WHITE);
             computeBtn.setFocusPainted(false);
         
-            top.add(computeBtn, BorderLayout.EAST);
+            top.add(new JLabel("Session:"));
+            top.add(awardsSessionCombo);
+            top.add(computeBtn);
             panel.add(top, BorderLayout.NORTH);
         
             // Cards container
@@ -326,31 +377,13 @@ public class CoordinatorDashboard extends JFrame {
                     return;
                 }
 
-                // Show dialog to select session or all sessions
-                String[] options = new String[sessions.size() + 1];
-                options[0] = "All Sessions";
-                for (int i = 0; i < sessions.size(); i++) {
-                    Session s = sessions.get(i);
-                    options[i + 1] = s.getSessionId() + " - " + s.getDate() + " " + s.getTime() + " (" + s.getVenue() + ")";
-                }
-
-                int choice = JOptionPane.showOptionDialog(CoordinatorDashboard.this,
-                        "Select a session to compute awards for:",
-                        "Session Selection",
-                        JOptionPane.DEFAULT_OPTION,
-                        JOptionPane.QUESTION_MESSAGE,
-                        null,
-                        options,
-                        options[0]);
-
-                if (choice == -1) return; // User cancelled
-
                 try {
+                    int selectedIndex = awardsSessionCombo.getSelectedIndex();
                     List<Session> selectedSessions = new ArrayList<>();
-                    if (choice == 0) {
+                    if (selectedIndex == 0) {
                         selectedSessions.addAll(sessions);
                     } else {
-                        selectedSessions.add(sessions.get(choice - 1));
+                        selectedSessions.add(sessions.get(selectedIndex - 1));
                     }
 
                     // Get eligible submissions from selected sessions
@@ -561,9 +594,29 @@ public class CoordinatorDashboard extends JFrame {
                 "Edit Session " + sessionId, JOptionPane.OK_CANCEL_OPTION);
     
         if (result == JOptionPane.OK_OPTION) {
-            session.setDate(newDate.getText().trim());
-            session.setTime(newTime.getText().trim());
-            session.setVenue(newVenue.getText().trim());
+            String newDateText = newDate.getText().trim();
+            String newTimeText = newTime.getText().trim();
+            String newVenueText = newVenue.getText().trim();
+
+            // Validate date format (DD/MM/YYYY)
+            if (!newDateText.matches("^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\\d{4}$")) {
+                JOptionPane.showMessageDialog(this,
+                        "Invalid date format. Please use DD/MM/YYYY (e.g., 31/01/2026).",
+                        "Validation Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Validate time format if provided
+            if (!newTimeText.isEmpty() && !isValidTimeFormat(newTimeText)) {
+                JOptionPane.showMessageDialog(this,
+                        "Invalid time format. Examples: 10AM, 2:30PM, 14:30, 9:00",
+                        "Validation Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            session.setDate(newDateText);
+            session.setTime(newTimeText);
+            session.setVenue(newVenueText);
     
             dataManager.saveToDisk();
             loadSessions();
@@ -573,6 +626,121 @@ public class CoordinatorDashboard extends JFrame {
         }
     }
 
+    private void deleteSelectedSession() {
+        int row = sessionTable.getSelectedRow();
+        if (row == -1) {
+            JOptionPane.showMessageDialog(this, "Select a session first.",
+                    "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String sessionId = (String) sessionModel.getValueAt(row, 0);
+        Session session = dataManager.findSessionById(sessionId);
+        if (session == null) return;
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to delete session:\n\"" + sessionId + "\" (" + session.getDate() + ")?\n\nThis will unassign all submissions and evaluators from this session.",
+                "Confirm Delete",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            // Unassign all submissions from this session
+            for (Submission sub : session.getSubmissions()) {
+                sub.setSession(null);
+            }
+            session.getSubmissions().clear();
+
+            // Unassign all evaluators from this session
+            session.getEvaluators().clear();
+
+            // Remove session from datastore
+            dataManager.getSessions().remove(session);
+            dataManager.saveToDisk();
+            loadSessions();
+            loadSubmissions();
+            loadEvaluators();
+
+            JOptionPane.showMessageDialog(this,
+                    "Session deleted successfully.",
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    private void unassignSubmissionFromSession() {
+        int sRow = sessionTable.getSelectedRow();
+        int subRow = submissionTable.getSelectedRow();
+
+        if (sRow == -1 || subRow == -1) {
+            JOptionPane.showMessageDialog(this, "Select a session and a submission first.",
+                    "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String sessionId = (String) sessionModel.getValueAt(sRow, 0);
+        String submissionId = (String) submissionModel.getValueAt(subRow, 0);
+
+        Session session = dataManager.findSessionById(sessionId);
+        Submission submission = dataManager.findSubmissionById(submissionId);
+
+        if (session == null || submission == null) return;
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to unassign this submission from session " + sessionId + "?",
+                "Confirm Unassign",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            session.removeSubmission(submission);
+            submission.setSession(null);
+
+            dataManager.saveToDisk();
+            loadSessions();
+            loadSubmissions();
+
+            JOptionPane.showMessageDialog(this,
+                    "Submission unassigned successfully.",
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    private void unassignEvaluatorFromSession() {
+        int sRow = sessionTable.getSelectedRow();
+        int eRow = evaluatorTable.getSelectedRow();
+
+        if (sRow == -1 || eRow == -1) {
+            JOptionPane.showMessageDialog(this, "Select a session and an evaluator first.",
+                    "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String sessionId = (String) sessionModel.getValueAt(sRow, 0);
+        String evaluatorId = (String) evaluatorModel.getValueAt(eRow, 0);
+
+        Session session = dataManager.findSessionById(sessionId);
+        Evaluator eval = dataManager.findEvaluatorById(evaluatorId);
+
+        if (session == null || eval == null) return;
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to unassign this evaluator from session " + sessionId + "?",
+                "Confirm Unassign",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            session.removeEvaluator(eval);
+
+            dataManager.saveToDisk();
+            loadSessions();
+
+            JOptionPane.showMessageDialog(this,
+                    "Evaluator unassigned successfully.",
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
 
     private void assignSubmissionToSession() {
         int sRow = sessionTable.getSelectedRow();
@@ -824,40 +992,23 @@ public class CoordinatorDashboard extends JFrame {
 
 
     private void generateScheduleReport() {
+        int selectedIndex = scheduleSessionCombo.getSelectedIndex();
         List<Session> sessions = dataManager.getSessions();
+
         if (sessions.isEmpty()) {
             JOptionPane.showMessageDialog(this, "No sessions available.",
                     "No Data", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
-        // Show dialog to select session or all sessions
-        String[] options = new String[sessions.size() + 1];
-        options[0] = "All Sessions";
-        for (int i = 0; i < sessions.size(); i++) {
-            Session s = sessions.get(i);
-            options[i + 1] = s.getSessionId() + " - " + s.getDate() + " " + s.getTime() + " (" + s.getVenue() + ")";
-        }
-
-        int choice = JOptionPane.showOptionDialog(this,
-                "Select a session for the schedule report:",
-                "Session Selection",
-                JOptionPane.DEFAULT_OPTION,
-                JOptionPane.QUESTION_MESSAGE,
-                null,
-                options,
-                options[0]);
-
-        if (choice == -1) return; // User cancelled
-
         try {
             Report r;
-            if (choice == 0) {
+            if (selectedIndex == 0) {
                 // All sessions
                 r = coordinator.generateScheduleReport(sessions);
             } else {
                 // Specific session
-                Session selected = sessions.get(choice - 1);
+                Session selected = sessions.get(selectedIndex - 1);
                 List<Session> singleSession = new ArrayList<>();
                 singleSession.add(selected);
                 r = coordinator.generateScheduleReport(singleSession);
@@ -869,40 +1020,23 @@ public class CoordinatorDashboard extends JFrame {
     }
 
     private void generateEvaluationReport() {
+        int selectedIndex = evaluationSessionCombo.getSelectedIndex();
         List<Session> sessions = dataManager.getSessions();
+
         if (sessions.isEmpty()) {
             JOptionPane.showMessageDialog(this, "No sessions available.",
                     "No Data", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
-        // Show dialog to select session or all sessions
-        String[] options = new String[sessions.size() + 1];
-        options[0] = "All Sessions";
-        for (int i = 0; i < sessions.size(); i++) {
-            Session s = sessions.get(i);
-            options[i + 1] = s.getSessionId() + " - " + s.getDate() + " " + s.getTime() + " (" + s.getVenue() + ")";
-        }
-
-        int choice = JOptionPane.showOptionDialog(this,
-                "Select a session for the evaluation report:",
-                "Session Selection",
-                JOptionPane.DEFAULT_OPTION,
-                JOptionPane.QUESTION_MESSAGE,
-                null,
-                options,
-                options[0]);
-
-        if (choice == -1) return; // User cancelled
-
         try {
             Report r;
-            if (choice == 0) {
+            if (selectedIndex == 0) {
                 // All sessions
                 r = coordinator.generateEvaluationReport(sessions);
             } else {
                 // Specific session
-                Session selected = sessions.get(choice - 1);
+                Session selected = sessions.get(selectedIndex - 1);
                 List<Session> singleSession = new ArrayList<>();
                 singleSession.add(selected);
                 r = coordinator.generateEvaluationReport(singleSession);
@@ -950,6 +1084,7 @@ public class CoordinatorDashboard extends JFrame {
         if (sessionsWrap != null) {
             sessionsWrap.setBorder(BorderFactory.createTitledBorder("Sessions (" + sessionModel.getRowCount() + ")"));
         }
+        updateSessionComboboxes();
     }
 
     private void loadSubmissions() {
@@ -1015,15 +1150,34 @@ public class CoordinatorDashboard extends JFrame {
         return p;
     }
 
-    private void logout() {
-        int confirm = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to logout?",
-                "Confirm Logout",
-                JOptionPane.YES_NO_OPTION);
+    private void updateSessionComboboxes() {
+        List<Session> sessions = dataManager.getSessions();
+        
+        // Update schedule report combobox
+        scheduleSessionCombo.removeAllItems();
+        scheduleSessionCombo.addItem("All Sessions");
+        for (Session s : sessions) {
+            if (s != null) {
+                scheduleSessionCombo.addItem(s.getSessionId() + " - " + s.getDate() + " " + s.getTime() + " (" + s.getVenue() + ")");
+            }
+        }
+        
+        // Update evaluation report combobox
+        evaluationSessionCombo.removeAllItems();
+        evaluationSessionCombo.addItem("All Sessions");
+        for (Session s : sessions) {
+            if (s != null) {
+                evaluationSessionCombo.addItem(s.getSessionId() + " - " + s.getDate() + " " + s.getTime() + " (" + s.getVenue() + ")");
+            }
+        }
 
-        if (confirm == JOptionPane.YES_OPTION) {
-            dispose();
-            new LoginFrame().setVisible(true);
+        // Update awards combobox
+        awardsSessionCombo.removeAllItems();
+        awardsSessionCombo.addItem("All Sessions");
+        for (Session s : sessions) {
+            if (s != null) {
+                awardsSessionCombo.addItem(s.getSessionId() + " - " + s.getDate() + " " + s.getTime() + " (" + s.getVenue() + ")");
+            }
         }
     }
 }

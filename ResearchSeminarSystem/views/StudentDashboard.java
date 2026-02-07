@@ -9,6 +9,8 @@ import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 
 // StudentDashboard - Interface for students to register and manage submissions
 
@@ -30,8 +32,21 @@ public class StudentDashboard extends JFrame {
     public StudentDashboard(Student student) {
         this.student = student;
         this.dataManager = DataManager.getInstance();
+        
+        // Set window icon
+        setWindowIcon();
+        
         initializeUI();
         loadSubmissions();
+    }
+
+    private void setWindowIcon() {
+        try {
+            BufferedImage img = ImageIO.read(new File("img/mmu.png"));
+            setIconImage(img);
+        } catch (Exception e) {
+            // Icon file not found, continue without icon
+        }
     }
 
     private void initializeUI() {
@@ -108,39 +123,56 @@ public class StudentDashboard extends JFrame {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(10, 10, 10, 10);
 
+        Font labelFont = new Font("Arial", Font.PLAIN, 14);
+        Font textFont = new Font("Arial", Font.PLAIN, 14);
+        Font buttonFont = new Font("Arial", Font.BOLD, 14);
+
         // Title
         gbc.gridx = 0; gbc.gridy = 0;
-        panel.add(new JLabel("Research Title:"), gbc);
+        JLabel titleLabel = new JLabel("Research Title:");
+        titleLabel.setFont(labelFont);
+        panel.add(titleLabel, gbc);
 
         gbc.gridx = 1; gbc.gridwidth = 2;
         titleField = new JTextField(30);
+        titleField.setFont(textFont);
         panel.add(titleField, gbc);
 
         // Abstract
         gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 1;
-        panel.add(new JLabel("Abstract:"), gbc);
+        JLabel abstractLabel = new JLabel("Abstract:");
+        abstractLabel.setFont(labelFont);
+        panel.add(abstractLabel, gbc);
 
         gbc.gridx = 1; gbc.gridwidth = 2;
         abstractArea = new JTextArea(5, 30);
         abstractArea.setLineWrap(true);
         abstractArea.setWrapStyleWord(true);
+        abstractArea.setFont(textFont);
         panel.add(new JScrollPane(abstractArea), gbc);
 
         // Supervisor
         gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 1;
-        panel.add(new JLabel("Supervisor:"), gbc);
+        JLabel supervisorLabel = new JLabel("Supervisor:");
+        supervisorLabel.setFont(labelFont);
+        panel.add(supervisorLabel, gbc);
 
         gbc.gridx = 1; gbc.gridwidth = 2;
         supervisorField = new JTextField(student.getSupervisorName() == null ? "" : student.getSupervisorName());
+        supervisorField.setFont(textFont);
         panel.add(supervisorField, gbc);
 
         // Presentation Type
         gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 1;
-        panel.add(new JLabel("Presentation Type:"), gbc);
+        JLabel typeLabel = new JLabel("Presentation Type:");
+        typeLabel.setFont(labelFont);
+        panel.add(typeLabel, gbc);
 
         gbc.gridx = 1; gbc.gridwidth = 2;
         oralRadio = new JRadioButton("Oral");
         posterRadio = new JRadioButton("Poster");
+        oralRadio.setFont(textFont);
+        posterRadio.setFont(textFont);
         oralRadio.setSelected(true);
 
         ButtonGroup typeGroup = new ButtonGroup();
@@ -154,21 +186,26 @@ public class StudentDashboard extends JFrame {
 
         // File Upload
         gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 1;
-        panel.add(new JLabel("Upload File:"), gbc);
+        JLabel fileLabel = new JLabel("Upload File:");
+        fileLabel.setFont(labelFont);
+        panel.add(fileLabel, gbc);
 
         gbc.gridx = 1; gbc.gridwidth = 1;
         fileField = new JTextField(22);
         fileField.setEditable(false);
+        fileField.setFont(textFont);
         panel.add(fileField, gbc);
 
         gbc.gridx = 2; gbc.gridwidth = 1;
         JButton browseButton = new JButton("Browse");
+        browseButton.setFont(buttonFont);
         browseButton.addActionListener(e -> browseFile());
         panel.add(browseButton, gbc);
 
         // Submit Button
         gbc.gridx = 1; gbc.gridy = 5; gbc.gridwidth = 2;
         JButton submitButton = new JButton("Register Submission");
+        submitButton.setFont(buttonFont);
         submitButton.setBackground(new Color(46, 204, 113));
         submitButton.setForeground(Color.WHITE);
         submitButton.addActionListener(e -> registerSubmission());
@@ -539,7 +576,7 @@ public class StudentDashboard extends JFrame {
             chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
             chooser.setAcceptAllFileFilterUsed(true);
             chooser.addChoosableFileFilter(
-                    new FileNameExtensionFilter("Documents (PDF/DOC/DOCX)", "pdf", "doc", "docx")
+                    new FileNameExtensionFilter("Presentation Files (PPTX/PDF/ODP)", "pptx", "pdf", "odp")
             );
 
             int res = chooser.showOpenDialog(this);
@@ -563,11 +600,55 @@ public class StudentDashboard extends JFrame {
         );
 
         if (result == JOptionPane.OK_OPTION) {
-            submission.setTitle(titleField.getText().trim());
-            submission.setAbstractText(abstractArea.getText().trim());
-            submission.setSupervisorName(supervisorField.getText().trim());
+            String newTitle = titleField.getText().trim();
+            String newAbstract = abstractArea.getText().trim();
+            String newSupervisor = supervisorField.getText().trim();
+            String newFilePath = fileField.getText().trim();
+
+            // Validate title length
+            if (newTitle.length() < 10) {
+                JOptionPane.showMessageDialog(this,
+                        "Research Title must be at least 10 characters long.",
+                        "Validation Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Validate abstract length
+            if (newAbstract.length() < 50) {
+                JOptionPane.showMessageDialog(this,
+                        "Abstract must be at least 50 characters long.",
+                        "Validation Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Validate supervisor
+            if (newSupervisor.isEmpty() || newSupervisor.length() < 5) {
+                JOptionPane.showMessageDialog(this,
+                        "Supervisor name must be at least 5 characters long.",
+                        "Validation Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Validate file type if provided
+            if (!newFilePath.isEmpty()) {
+                String extension = getFileExtension(newFilePath).toLowerCase();
+                if (!isValidFileType(extension)) {
+                    JOptionPane.showMessageDialog(this,
+                            "Invalid file type. Only .pptx, .pdf, and .odp files are allowed.",
+                            "Validation Error",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            }
+
+            submission.setTitle(newTitle);
+            submission.setAbstractText(newAbstract);
+            submission.setSupervisorName(newSupervisor);
             submission.setPresentationType(oralRadio.isSelected() ? "Oral" : "Poster");
-            submission.setFilePath(fileField.getText().trim());
+            submission.setFilePath(newFilePath);
 
             dataManager.saveToDisk();
             loadSubmissions();
