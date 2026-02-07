@@ -78,22 +78,34 @@ public class CoordinatorDashboard extends JFrame {
 
         // Header
         JPanel headerPanel = new JPanel();
-        headerPanel.setBackground(new Color(231, 76, 60)); // red
-        headerPanel.setPreferredSize(new Dimension(1100, 60));
+        headerPanel.setBackground(new Color(192, 57, 43));
+        headerPanel.setPreferredSize(new Dimension(1100, 70));
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
         JLabel headerLabel = new JLabel("Coordinator Dashboard - " + coordinator.getName());
-        headerLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        headerLabel.setFont(new Font("Arial", Font.BOLD, 20));
         headerLabel.setForeground(Color.WHITE);
         headerPanel.add(headerLabel);
 
         // Tabs
         JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane.setFont(new Font("Arial", Font.PLAIN, 13));
         tabbedPane.addTab("Session Management", createSessionManagementPanel());
         tabbedPane.addTab("Reports", createReportsPanel());
         tabbedPane.addTab("Awards", createAwardsPanel());
 
         // Bottom
-        JPanel bottomPanel = new JPanel();
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 10));
+        bottomPanel.setBackground(new Color(236, 240, 241));
+        bottomPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(189, 195, 199)));
+        
         JButton refreshButton = new JButton("Refresh");
+        refreshButton.setFont(new Font("Arial", Font.BOLD, 12));
+        refreshButton.setBackground(new Color(52, 152, 219));
+        refreshButton.setForeground(Color.WHITE);
+        refreshButton.setFocusPainted(false);
+        refreshButton.setBorderPainted(false);
+        refreshButton.setPreferredSize(new Dimension(100, 35));
+        refreshButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         refreshButton.addActionListener(e -> {
             loadSessions();
             loadSubmissions();
@@ -101,6 +113,13 @@ public class CoordinatorDashboard extends JFrame {
         });
 
         JButton logoutButton = new JButton("Logout");
+        logoutButton.setFont(new Font("Arial", Font.BOLD, 12));
+        logoutButton.setBackground(new Color(231, 76, 60));
+        logoutButton.setForeground(Color.WHITE);
+        logoutButton.setFocusPainted(false);
+        logoutButton.setBorderPainted(false);
+        logoutButton.setPreferredSize(new Dimension(100, 35));
+        logoutButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         logoutButton.addActionListener(e -> logout());
 
         bottomPanel.add(refreshButton);
@@ -116,21 +135,33 @@ public class CoordinatorDashboard extends JFrame {
         panel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
 
         // Top form: create session
-        JPanel form = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        form.setBorder(BorderFactory.createTitledBorder("Create New Session"));
+        JPanel form = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
+        form.setBorder(BorderFactory.createTitledBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(189, 195, 199)), "Create New Session", 0, 0, new Font("Arial", Font.BOLD, 12)));
+        form.setBackground(new Color(245, 245, 245));
 
         dateField = new JTextField(10);   
         timeField = new JTextField(8);    
         venueField = new JTextField(12);
         typeBox = new JComboBox<>(new String[]{"Oral", "Poster"});
+        
+        for (JTextField tf : new JTextField[]{dateField, timeField, venueField}) {
+            tf.setFont(new Font("Arial", Font.PLAIN, 12));
+            tf.setBorder(BorderFactory.createLineBorder(new Color(189, 195, 199)));
+        }
+        
+        typeBox.setFont(new Font("Arial", Font.PLAIN, 12));
 
         dateField.setToolTipText("Format: DD/MM/YYYY (e.g., 31/01/2026)");
         timeField.setToolTipText("Example: 10AM, 12PM");
         venueField.setToolTipText("Example: Hall 1");
 
         JButton createBtn = new JButton("Create");
-        createBtn.setBackground(new Color(52, 152, 219));
+        createBtn.setBackground(new Color(46, 204, 113));
         createBtn.setForeground(Color.WHITE);
+        createBtn.setFont(new Font("Arial", Font.BOLD, 12));
+        createBtn.setFocusPainted(false);
+        createBtn.setBorderPainted(false);
+        createBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         createBtn.addActionListener(e -> createSession());
 
         form.add(new JLabel("Date:"));
@@ -156,6 +187,7 @@ public class CoordinatorDashboard extends JFrame {
         };
         sessionTable = new JTable(sessionModel);
         sessionTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        sessionTable.setSelectionMode(javax.swing.ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         sessionTable.getColumnModel().getColumn(0).setPreferredWidth(110); // Session ID
         sessionTable.getColumnModel().getColumn(1).setPreferredWidth(90);  // Date
         sessionTable.getColumnModel().getColumn(2).setPreferredWidth(60);  // Time
@@ -178,6 +210,7 @@ public class CoordinatorDashboard extends JFrame {
         };
         submissionTable = new JTable(submissionModel);
         submissionTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        submissionTable.setSelectionMode(javax.swing.ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         submissionTable.getColumnModel().getColumn(0).setPreferredWidth(110);
         submissionTable.getColumnModel().getColumn(1).setPreferredWidth(160);
         submissionTable.getColumnModel().getColumn(2).setPreferredWidth(60);
@@ -230,6 +263,7 @@ public class CoordinatorDashboard extends JFrame {
         };
         evaluatorTable = new JTable(evaluatorModel);
         evaluatorTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        evaluatorTable.setSelectionMode(javax.swing.ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         evaluatorTable.getColumnModel().getColumn(0).setPreferredWidth(100);
         evaluatorTable.getColumnModel().getColumn(1).setPreferredWidth(140);
 
@@ -246,28 +280,42 @@ public class CoordinatorDashboard extends JFrame {
 
         // Bottom: assign buttons
         JPanel btnPanel = new JPanel(new BorderLayout(8, 8));
+        btnPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        btnPanel.setBackground(new Color(236, 240, 241));
         
         // Top row: primary actions
-        JPanel primary = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 5));
+        JPanel primary = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 8));
+        primary.setOpaque(false);
         JButton assignSubmissionBtn = new JButton("Assign Submission → Session");
         JButton assignEvaluatorBtn = new JButton("Assign Evaluator → Session");
+        
+        for (JButton btn : new JButton[]{assignSubmissionBtn, assignEvaluatorBtn}) {
+            btn.setFont(new Font("Arial", Font.BOLD, 13));
+            btn.setBackground(new Color(52, 152, 219));
+            btn.setForeground(Color.WHITE);
+            btn.setFocusPainted(false);
+            btn.setBorderPainted(false);
+            btn.setPreferredSize(new Dimension(200, 35));
+            btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        }
+        
         primary.add(assignSubmissionBtn);
         primary.add(assignEvaluatorBtn);
         
         // Bottom row: secondary actions
-        JPanel secondary = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
+        JPanel secondary = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 8));
+        secondary.setOpaque(false);
         
         JButton viewDetailsBtn = new JButton("View Details");
-        JButton editSessionBtn = new JButton("Edit Session");
-        JButton deleteSessionBtn = new JButton("Delete Session");
-        JButton unassignSubmissionBtn = new JButton("Unassign Submission");
-        JButton unassignEvaluatorBtn = new JButton("Unassign Evaluator");
+        viewDetailsBtn.setFont(new Font("Arial", Font.BOLD, 13));
+        viewDetailsBtn.setBackground(new Color(149, 165, 166));
+        viewDetailsBtn.setForeground(Color.WHITE);
+        viewDetailsBtn.setFocusPainted(false);
+        viewDetailsBtn.setBorderPainted(false);
+        viewDetailsBtn.setPreferredSize(new Dimension(140, 35));
+        viewDetailsBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         
         secondary.add(viewDetailsBtn);
-        secondary.add(editSessionBtn);
-        secondary.add(deleteSessionBtn);
-        secondary.add(unassignSubmissionBtn);
-        secondary.add(unassignEvaluatorBtn);
         
         btnPanel.add(primary, BorderLayout.NORTH);
         btnPanel.add(secondary, BorderLayout.SOUTH);
@@ -276,10 +324,6 @@ public class CoordinatorDashboard extends JFrame {
         assignSubmissionBtn.addActionListener(e -> assignSubmissionToSession());
         assignEvaluatorBtn.addActionListener(e -> assignEvaluatorToSession());
         viewDetailsBtn.addActionListener(e -> openDetailsDialog());
-        editSessionBtn.addActionListener(e -> editSelectedSession());
-        deleteSessionBtn.addActionListener(e -> deleteSelectedSession());
-        unassignSubmissionBtn.addActionListener(e -> unassignSubmissionFromSession());
-        unassignEvaluatorBtn.addActionListener(e -> unassignEvaluatorFromSession());
         
         panel.add(btnPanel, BorderLayout.SOUTH);
 
@@ -536,6 +580,15 @@ public class CoordinatorDashboard extends JFrame {
             return;
         }
 
+        // Confirmation dialog
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Create session on " + date + "?\\n\\nWarning: This action cannot be undone.",
+                "Confirm Session Creation",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+
+        if (confirm != JOptionPane.YES_OPTION) return;
+
         try {
             Session session = coordinator.createSession(date, venue, type);
 
@@ -743,109 +796,134 @@ public class CoordinatorDashboard extends JFrame {
     }
 
     private void assignSubmissionToSession() {
-        int sRow = sessionTable.getSelectedRow();
-        int subRow = submissionTable.getSelectedRow();
+        int[] sessionRows = sessionTable.getSelectedRows();
+        int[] submissionRows = submissionTable.getSelectedRows();
 
-        if (sRow == -1 || subRow == -1) {
-            JOptionPane.showMessageDialog(this, "Select a session and a submission first.",
+        if (sessionRows.length == 0 || submissionRows.length == 0) {
+            JOptionPane.showMessageDialog(this, "Select at least one session and one submission.",
                     "No Selection", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        String sessionId = (String) sessionModel.getValueAt(sRow, 0);
-        String submissionId = (String) submissionModel.getValueAt(subRow, 0);
-
+        String sessionId = (String) sessionModel.getValueAt(sessionRows[0], 0);
         Session session = dataManager.findSessionById(sessionId);
-        Submission submission = dataManager.findSubmissionById(submissionId);
-
-        if (session == null || submission == null) return;
-
-        try {
-            String sType = session.getSessionType();
-            String subType = submission.getPresentationType();
-            if (sType != null && subType != null && !sType.equalsIgnoreCase(subType)) {
-                JOptionPane.showMessageDialog(this,
-                        "Type mismatch!\nSession: " + sType + "\nSubmission: " + subType,
-                        "Cannot Assign", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
         
-            Session already = dataManager.findSessionBySubmissionId(submission.getSubmissionId());
-            if (already != null) {
-                JOptionPane.showMessageDialog(this,
-                        "This submission is already assigned to session " + already.getSessionId() +
-                        "\nUnassign it first before assigning again.",
-                        "Already Assigned", JOptionPane.WARNING_MESSAGE);
-                return;
+        if (session == null) return;
+
+        int assignedCount = 0;
+        int failedCount = 0;
+        StringBuilder failureReasons = new StringBuilder();
+        
+        for (int subRow : submissionRows) {
+            String submissionId = (String) submissionModel.getValueAt(subRow, 0);
+            Submission submission = dataManager.findSubmissionById(submissionId);
+
+            if (submission == null) {
+                failedCount++;
+                continue;
             }
 
-            boolean ok = coordinator.assignSubmissionToSession(session, submission);
+            try {
+                String sType = session.getSessionType();
+                String subType = submission.getPresentationType();
+                if (sType != null && subType != null && !sType.equalsIgnoreCase(subType)) {
+                    failureReasons.append("✗ ").append(submission.getTitle())
+                            .append(" (Type mismatch: ").append(subType).append(")\\n");
+                    failedCount++;
+                    continue;
+                }
+            
+                Session already = dataManager.findSessionBySubmissionId(submission.getSubmissionId());
+                if (already != null) {
+                    failureReasons.append("✗ ").append(submission.getTitle())
+                            .append(" (Already assigned to ").append(already.getSessionId()).append(")\\n");
+                    failedCount++;
+                    continue;
+                }
+
+                boolean ok = coordinator.assignSubmissionToSession(session, submission);
+            
+                if (!ok) {
+                    failureReasons.append("✗ ").append(submission.getTitle()).append(" (Assignment failed)\\n");
+                    failedCount++;
+                    continue;
+                }
+                
+                assignedCount++;
         
-            if (!ok) {
-                JOptionPane.showMessageDialog(this,
-                        "Assignment failed. This session may not be managed by this coordinator.",
-                        "Failed", JOptionPane.ERROR_MESSAGE);
-                return;
+            } catch (Exception ex) {
+                failureReasons.append("✗ ").append(submission.getTitle()).append(" (").append(ex.getMessage()).append(")\\n");
+                failedCount++;
             }
-        
-            dataManager.saveToDisk();
-        
-            JOptionPane.showMessageDialog(this,
-                    "Assigned submission:\n" + submission.getTitle() +
-                    "\n→ Session " + session.getSessionId() +
-                    " (" + session.getDate() + " " + session.getTime() + ")",
-                    "Success", JOptionPane.INFORMATION_MESSAGE);
-                    
-            loadSessions();
-            loadSubmissions();  
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Failed to assign submission: " + ex.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
         }
+        
+        dataManager.saveToDisk();
+        loadSessions();
+        loadSubmissions();
+        
+        String message = "Assigned: " + assignedCount + " submission(s)\\n";
+        if (failedCount > 0) {
+            message += "Failed: " + failedCount + "\\n\\n" + failureReasons.toString();
+        }
+        
+        JOptionPane.showMessageDialog(this, message, "Assignment Summary", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void assignEvaluatorToSession() {
-        int sRow = sessionTable.getSelectedRow();
-        int eRow = evaluatorTable.getSelectedRow();
+        int[] sessionRows = sessionTable.getSelectedRows();
+        int[] evaluatorRows = evaluatorTable.getSelectedRows();
 
-        if (sRow == -1 || eRow == -1) {
-            JOptionPane.showMessageDialog(this, "Select a session and an evaluator first.",
+        if (sessionRows.length == 0 || evaluatorRows.length == 0) {
+            JOptionPane.showMessageDialog(this, "Select at least one session and one evaluator.",
                     "No Selection", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        String sessionId = (String) sessionModel.getValueAt(sRow, 0);
-        String evaluatorId = (String) evaluatorModel.getValueAt(eRow, 0);
-
+        String sessionId = (String) sessionModel.getValueAt(sessionRows[0], 0);
         Session session = dataManager.findSessionById(sessionId);
-        Evaluator eval = dataManager.findEvaluatorById(evaluatorId);
 
-        if (session == null || eval == null) return;
+        if (session == null) return;
 
-        try {
-            boolean ok = coordinator.assignEvaluatorToSession(session, eval);
+        int assignedCount = 0;
+        int failedCount = 0;
+        StringBuilder failureReasons = new StringBuilder();
         
-            if (!ok) {
-                JOptionPane.showMessageDialog(this,
-                        "Assignment failed. This session may not be managed by this coordinator.",
-                        "Failed", JOptionPane.ERROR_MESSAGE);
-                return;
+        for (int eRow : evaluatorRows) {
+            String evaluatorId = (String) evaluatorModel.getValueAt(eRow, 0);
+            Evaluator eval = dataManager.findEvaluatorById(evaluatorId);
+
+            if (eval == null) {
+                failedCount++;
+                continue;
             }
-        
-            dataManager.saveToDisk();
-        
-            JOptionPane.showMessageDialog(this,
-                    "Assigned evaluator:\n" + eval.getName() +
-                    "\n→ Session " + session.getSessionId() +
-                    " (" + session.getDate() + " " + session.getTime() + ")",
-                    "Success", JOptionPane.INFORMATION_MESSAGE);
-        
-            loadSessions();
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Failed to assign evaluator: " + ex.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
-        }
 
+            try {
+                boolean ok = coordinator.assignEvaluatorToSession(session, eval);
+            
+                if (!ok) {
+                    failureReasons.append("✗ ").append(eval.getName()).append(" (Assignment failed)\\n");
+                    failedCount++;
+                    continue;
+                }
+                
+                assignedCount++;
+        
+            } catch (Exception ex) {
+                failureReasons.append("✗ ").append(eval.getName()).append(" (").append(ex.getMessage()).append(")\\n");
+                failedCount++;
+            }
+        }
+        
+        dataManager.saveToDisk();
+        loadSessions();
+        loadEvaluators();
+        
+        String message = "Assigned: " + assignedCount + " evaluator(s)\\n";
+        if (failedCount > 0) {
+            message += "Failed: " + failedCount + "\\n\\n" + failureReasons.toString();
+        }
+        
+        JOptionPane.showMessageDialog(this, message, "Assignment Summary", JOptionPane.INFORMATION_MESSAGE);
     }
     
     private void openDetailsDialog() {

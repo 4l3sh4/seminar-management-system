@@ -78,21 +78,33 @@ public class EvaluatorDashboard extends JFrame {
 
         // Header
         JPanel headerPanel = new JPanel();
-        headerPanel.setBackground(new Color(155, 89, 182));
-        headerPanel.setPreferredSize(new Dimension(1050, 60));
+        headerPanel.setBackground(new Color(108, 52, 131));
+        headerPanel.setPreferredSize(new Dimension(1050, 70));
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
         JLabel headerLabel = new JLabel("Evaluator Dashboard - " + evaluator.getName());
-        headerLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        headerLabel.setFont(new Font("Arial", Font.BOLD, 20));
         headerLabel.setForeground(Color.WHITE);
         headerPanel.add(headerLabel);
 
         // Tabs
         JTabbedPane tabs = new JTabbedPane();
+        tabs.setFont(new Font("Arial", Font.PLAIN, 13));
         tabs.addTab("Sessions", createWizardMySessionsPanel());
         tabs.addTab("Evaluations", createMyEvaluationsPanel());
 
         // Bottom
-        JPanel bottomPanel = new JPanel();
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 10));
+        bottomPanel.setBackground(new Color(236, 240, 241));
+        bottomPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(189, 195, 199)));
+        
         JButton refreshButton = new JButton("Refresh");
+        refreshButton.setFont(new Font("Arial", Font.BOLD, 12));
+        refreshButton.setBackground(new Color(52, 152, 219));
+        refreshButton.setForeground(Color.WHITE);
+        refreshButton.setFocusPainted(false);
+        refreshButton.setBorderPainted(false);
+        refreshButton.setPreferredSize(new Dimension(100, 35));
+        refreshButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         refreshButton.addActionListener(e -> {
             loadMySessions();
             loadMyEvaluations();
@@ -103,6 +115,13 @@ public class EvaluatorDashboard extends JFrame {
         });
 
         JButton logoutButton = new JButton("Logout");
+        logoutButton.setFont(new Font("Arial", Font.BOLD, 12));
+        logoutButton.setBackground(new Color(231, 76, 60));
+        logoutButton.setForeground(Color.WHITE);
+        logoutButton.setFocusPainted(false);
+        logoutButton.setBorderPainted(false);
+        logoutButton.setPreferredSize(new Dimension(100, 35));
+        logoutButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         logoutButton.addActionListener(e -> logout());
 
         bottomPanel.add(refreshButton);
@@ -759,7 +778,7 @@ public class EvaluatorDashboard extends JFrame {
     }
 
     private void setArrowButtonText(JButton btn, String baseText, boolean rightArrow) {
-        String arrow = rightArrow ? "\u2192" : "\u2190"; // → or ←
+        String arrow = rightArrow ? "\u2192" : "\u2190"; // right or left arrow
 
         Font current = btn.getFont();
         if (current != null && current.canDisplayUpTo(arrow) != -1) {

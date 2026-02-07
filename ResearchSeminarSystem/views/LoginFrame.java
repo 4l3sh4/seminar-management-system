@@ -57,10 +57,10 @@ public class LoginFrame extends JFrame {
         // =========================
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBackground(new Color(41, 128, 185));
-        headerPanel.setBorder(new EmptyBorder(18, 18, 18, 18));
+        headerPanel.setBorder(new EmptyBorder(25, 18, 25, 18));
 
         JLabel titleLabel = new JLabel("Seminar Management System", SwingConstants.CENTER);
-        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 28f));
+        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 30f));
         titleLabel.setForeground(Color.WHITE);
         headerPanel.add(titleLabel, BorderLayout.CENTER);
 
@@ -70,13 +70,18 @@ public class LoginFrame extends JFrame {
         // Center wrapper (keeps form centered even on maximize)
         // =========================
         JPanel centerWrapper = new JPanel(new GridBagLayout());
+        centerWrapper.setBackground(new Color(236, 240, 241));
         centerWrapper.setBorder(new EmptyBorder(30, 40, 30, 40));
         add(centerWrapper, BorderLayout.CENTER);
 
         // The form
         JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBorder(BorderFactory.createTitledBorder("Login"));
-        formPanel.setPreferredSize(new Dimension(560, 280)); 
+        formPanel.setBackground(Color.WHITE);
+        formPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createRaisedBevelBorder(),
+                new EmptyBorder(20, 25, 20, 25)
+        ));
+        formPanel.setPreferredSize(new Dimension(560, 300)); 
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -86,49 +91,73 @@ public class LoginFrame extends JFrame {
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.weightx = 0;
-        formPanel.add(new JLabel("User ID:"), gbc);
+        JLabel userIdLabel = new JLabel("User ID:");
+        userIdLabel.setFont(new Font("Arial", Font.BOLD, 13));
+        formPanel.add(userIdLabel, gbc);
 
         gbc.gridx = 1;
         gbc.gridy = 0;
         gbc.weightx = 1; 
         userIdField = new JTextField();
+        userIdField.setFont(new Font("Arial", Font.PLAIN, 13));
+        userIdField.setBorder(BorderFactory.createLineBorder(new Color(189, 195, 199)));
+        userIdField.setPreferredSize(new Dimension(200, 30));
         formPanel.add(userIdField, gbc);
 
         // Password
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.weightx = 0;
-        formPanel.add(new JLabel("Password:"), gbc);
+        JLabel passLabel = new JLabel("Password:");
+        passLabel.setFont(new Font("Arial", Font.BOLD, 13));
+        formPanel.add(passLabel, gbc);
 
         gbc.gridx = 1;
         gbc.gridy = 1;
         gbc.weightx = 1; 
         passwordField = new JPasswordField();
+        passwordField.setFont(new Font("Arial", Font.PLAIN, 13));
+        passwordField.setBorder(BorderFactory.createLineBorder(new Color(189, 195, 199)));
+        passwordField.setPreferredSize(new Dimension(200, 30));
         formPanel.add(passwordField, gbc);
 
         // Role
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.weightx = 0;
-        formPanel.add(new JLabel("Role:"), gbc);
+        JLabel roleLabel = new JLabel("Role:");
+        roleLabel.setFont(new Font("Arial", Font.BOLD, 13));
+        formPanel.add(roleLabel, gbc);
 
         gbc.gridx = 1;
         gbc.gridy = 2;
         gbc.weightx = 1; 
         roleComboBox = new JComboBox<>(new String[]{"Student", "Evaluator", "Coordinator"});
+        roleComboBox.setFont(new Font("Arial", Font.PLAIN, 13));
         formPanel.add(roleComboBox, gbc);
 
         // Buttons row
-        JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 18, 0));
+        JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 15));
+        btnRow.setOpaque(false);
 
         loginButton = new JButton("Login");
+        loginButton.setFont(new Font("Arial", Font.BOLD, 13));
         loginButton.setBackground(new Color(46, 204, 113));
         loginButton.setForeground(Color.WHITE);
+        loginButton.setPreferredSize(new Dimension(120, 38));
+        loginButton.setFocusPainted(false);
+        loginButton.setBorderPainted(false);
+        loginButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         loginButton.addActionListener(e -> performLogin());
 
         registerButton = new JButton("Register");
+        registerButton.setFont(new Font("Arial", Font.BOLD, 13));
         registerButton.setBackground(new Color(52, 152, 219));
         registerButton.setForeground(Color.WHITE);
+        registerButton.setPreferredSize(new Dimension(120, 38));
+        registerButton.setFocusPainted(false);
+        registerButton.setBorderPainted(false);
+        registerButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         registerButton.addActionListener(e -> openRegisterDialog());
 
         btnRow.add(loginButton);
@@ -138,6 +167,7 @@ public class LoginFrame extends JFrame {
         gbc.gridy = 3;
         gbc.gridwidth = 2;
         gbc.weightx = 1;
+        gbc.insets = new Insets(20, 12, 12, 12);
         formPanel.add(btnRow, gbc);
 
         // Add formPanel centered in wrapper

@@ -58,21 +58,32 @@ public class StudentDashboard extends JFrame {
 
         // Header
         JPanel headerPanel = new JPanel();
-        headerPanel.setBackground(new Color(52, 152, 219));
-        headerPanel.setPreferredSize(new Dimension(900, 60));
+        headerPanel.setBackground(new Color(41, 128, 185));
+        headerPanel.setPreferredSize(new Dimension(900, 70));
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
         JLabel headerLabel = new JLabel("Student Dashboard - " + student.getName());
-        headerLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        headerLabel.setFont(new Font("Arial", Font.BOLD, 20));
         headerLabel.setForeground(Color.WHITE);
         headerPanel.add(headerLabel);
 
         // Tabs
         JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane.setFont(new Font("Arial", Font.PLAIN, 13));
         tabbedPane.addTab("Submissions", createSubmissionsPanel());
         tabbedPane.addTab("New Registration", createRegistrationPanel());
 
         // Bottom
-        JPanel bottomPanel = new JPanel();
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 10));
+        bottomPanel.setBackground(new Color(236, 240, 241));
+        bottomPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(189, 195, 199)));
         JButton logoutButton = new JButton("Logout");
+        logoutButton.setFont(new Font("Arial", Font.BOLD, 12));
+        logoutButton.setBackground(new Color(231, 76, 60));
+        logoutButton.setForeground(Color.WHITE);
+        logoutButton.setFocusPainted(false);
+        logoutButton.setBorderPainted(false);
+        logoutButton.setPreferredSize(new Dimension(100, 35));
+        logoutButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         logoutButton.addActionListener(e -> logout());
         bottomPanel.add(logoutButton);
 
@@ -83,7 +94,7 @@ public class StudentDashboard extends JFrame {
 
     private JPanel createSubmissionsPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
         String[] columns = {"ID", "Title", "Type", "Session", "File", "Avg Score", "Evaluations"};
         tableModel = new DefaultTableModel(columns, 0) {
@@ -91,14 +102,34 @@ public class StudentDashboard extends JFrame {
         };
 
         submissionTable = new JTable(tableModel);
+        submissionTable.setFont(new Font("Arial", Font.PLAIN, 12));
+        submissionTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
+        submissionTable.setRowHeight(24);
         panel.add(new JScrollPane(submissionTable), BorderLayout.CENTER);
 
-        JPanel buttonPanel = new JPanel();
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        buttonPanel.setBackground(new Color(236, 240, 241));
+        
         JButton viewButton = new JButton("View Details");
         JButton refreshButton = new JButton("Refresh");
         JButton feedbackButton = new JButton("View Feedback");
         JButton editButton = new  JButton("Edit Submission");
         JButton deleteButton = new JButton("Delete Submission");
+        
+        for (JButton btn : new JButton[]{viewButton, refreshButton, feedbackButton, editButton, deleteButton}) {
+            btn.setFont(new Font("Arial", Font.BOLD, 12));
+            btn.setFocusPainted(false);
+            btn.setPreferredSize(new Dimension(140, 35));
+            btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            if (btn == deleteButton) {
+                btn.setBackground(new Color(231, 76, 60));
+                btn.setForeground(Color.WHITE);
+            } else {
+                btn.setBackground(new Color(52, 152, 219));
+                btn.setForeground(Color.WHITE);
+            }
+            btn.setBorderPainted(false);
+        }
         
         viewButton.addActionListener(e -> viewSubmissionDetails());
         refreshButton.addActionListener(e -> loadSubmissions());
@@ -179,7 +210,9 @@ public class StudentDashboard extends JFrame {
         typeGroup.add(oralRadio);
         typeGroup.add(posterRadio);
 
-        JPanel radioPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel radioPanel = new JPanel();
+        radioPanel.setOpaque(false);
+        radioPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 15, 0));
         radioPanel.add(oralRadio);
         radioPanel.add(posterRadio);
         panel.add(radioPanel, gbc);
@@ -199,6 +232,11 @@ public class StudentDashboard extends JFrame {
         gbc.gridx = 2; gbc.gridwidth = 1;
         JButton browseButton = new JButton("Browse");
         browseButton.setFont(buttonFont);
+        browseButton.setBackground(new Color(52, 152, 219));
+        browseButton.setForeground(Color.WHITE);
+        browseButton.setFocusPainted(false);
+        browseButton.setBorderPainted(false);
+        browseButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         browseButton.addActionListener(e -> browseFile());
         panel.add(browseButton, gbc);
 
@@ -208,6 +246,10 @@ public class StudentDashboard extends JFrame {
         submitButton.setFont(buttonFont);
         submitButton.setBackground(new Color(46, 204, 113));
         submitButton.setForeground(Color.WHITE);
+        submitButton.setFocusPainted(false);
+        submitButton.setBorderPainted(false);
+        submitButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        submitButton.setPreferredSize(new Dimension(200, 40));
         submitButton.addActionListener(e -> registerSubmission());
         panel.add(submitButton, gbc);
         
