@@ -38,29 +38,49 @@ public class Coordinator extends User implements Serializable {
         return session;
     }
 
-    // Assign evaluator to session
     public boolean assignEvaluatorToSession(Session session, Evaluator evaluator) {
         if (session == null || evaluator == null) return false;
-
-        if (managedSessions.contains(session)) {
-            session.addEvaluator(evaluator);
-            evaluator.assignToSession(session);
-            return true;
+    
+        // Ensure this coordinator manages the session
+        if (!managedSessions.contains(session)) {
+            managedSessions.add(session);
         }
-        return false;
+    
+        session.addEvaluator(evaluator);
+        evaluator.assignToSession(session);
+        return true;
     }
-
-    // Assign submission to session
+    
     public boolean assignSubmissionToSession(Session session, Submission submission) {
         if (session == null || submission == null) return false;
-
-        if (managedSessions.contains(session)) {
-            session.addSubmission(submission);
-            return true;
+        if (!managedSessions.contains(session)) {
+            managedSessions.add(session);
         }
-        return false;
+    
+        session.addSubmission(submission);
+        //AUTO-ASSIGN BOARD ID (POSTER SUBMISSIONS ONLY)
+        if ("Poster".equalsIgnoreCase(submission.getPresentationType())) {
+            // assign only if not already assigned
+            if (submission.getBoardId() == null || submission.getBoardId().isBlank()) {
+    
+                int count = 1;
+    
+                // count existing POSTER submissions with board IDs
+                for (Submission s : session.getSubmissions()) {
+                    if (s != null &&
+                        "Poster".equalsIgnoreCase(s.getPresentationType()) &&
+                        s.getBoardId() != null) {
+                        count++;
+                    }
+                }
+    
+                // clean, stable board ID
+                submission.setBoardId("P" + String.format("%02d", count));
+            }
+        }
+        return true;
     }
-
+    
     // Generate seminar schedule (String version)
     public String generateSchedule() {
         StringBuilder schedule = new StringBuilder();

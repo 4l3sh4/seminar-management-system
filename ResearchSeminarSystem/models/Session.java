@@ -157,4 +157,19 @@ public class Session implements Serializable {
         return sessionId + " - " + date + (safeTime.isEmpty() ? "" : (" " + safeTime))
                 + " (" + sessionType + ") - " + venue;
     }
+    
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Session)) return false;
+        Session other = (Session) o;
+        return sessionId != null && sessionId.equals(other.sessionId);
+    }
+    
+    @Override
+    public int hashCode() {
+        return sessionId == null ? 0 : sessionId.hashCode();
+    }
+
 }

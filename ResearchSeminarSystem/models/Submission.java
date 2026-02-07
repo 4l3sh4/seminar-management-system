@@ -157,6 +157,18 @@ public class Submission implements Serializable {
         }
         return (count == 0) ? 0.0 : total / count;
     }
+    
+    public double getTotalScore() {
+        List<Evaluation> evals = getEvaluations();
+        if (evals.isEmpty()) return 0.0;
+    
+        double total = 0.0;
+        for (Evaluation ev : evals) {
+            if (ev == null) continue;
+            total += ev.getTotalScore(); // same as avg logic, but no divide
+        }
+        return total;
+    }
 
     // Details 
 
@@ -207,4 +219,18 @@ public class Submission implements Serializable {
         String safeType = (presentationType != null) ? presentationType : "";
         return safeTitle + " (" + safeType + ") - " + getStudentName();
     }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Submission)) return false;
+        Submission other = (Submission) o;
+        return submissionId != null && submissionId.equals(other.submissionId);
+    }
+    
+    @Override
+    public int hashCode() {
+        return submissionId == null ? 0 : submissionId.hashCode();
+    }
+
 }

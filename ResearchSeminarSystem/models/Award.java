@@ -43,9 +43,9 @@ public class Award implements Serializable {
         return winner;
     }
 
-    public void setWinner(Submission winner) {
+    public void setWinner(Submission winner, double score) {
         this.winner = winner;
-        this.winningScore = (winner != null) ? winner.getAverageScore() : 0.0;
+        this.winningScore = (winner != null) ? score : 0.0;
     }
 
     public double getWinningScore() {
@@ -55,41 +55,43 @@ public class Award implements Serializable {
     // Determine winner from a list of submissions
     public void determineWinner(List<Submission> submissions) {
         if (submissions == null || submissions.isEmpty()) return;
-
-        // Filter by presentation type for specific awards
-        List<Submission> filtered = new ArrayList<>();
-
-        if ("Best Oral".equals(awardType)) {
-            for (Submission sub : submissions) {
-                if (sub != null && "Oral".equals(sub.getPresentationType())) filtered.add(sub);
-            }
-        } else if ("Best Poster".equals(awardType)) {
-            for (Submission sub : submissions) {
-                if (sub != null && "Poster".equals(sub.getPresentationType())) filtered.add(sub);
-            }
-        } else {
-            // People's Choice - all submissions
-            for (Submission sub : submissions) {
-                if (sub != null) filtered.add(sub);
-            }
-        }
-
-        Submission bestSubmission = null;
-        double highestScore = 0.0;
-
-        for (Submission sub : filtered) {
-            // Only consider if there is at least 1 evaluation
+    
+        Submission best = null;
+        double bestScore = 0.0;
+    
+        for (Submission sub : submissions) {
+            if (sub == null) continue;
             if (sub.getEvaluations() == null || sub.getEvaluations().isEmpty()) continue;
+    
+            double score;
+    
+            if ("Best Oral".equals(awardType)) {
+                if (sub.getPresentationType() == null || !"Oral".equalsIgnoreCase(sub.getPresentationType())) continue;
+                score = sub.getAverageScore();
+    
+            } else if ("Best Poster".equals(awardType)) {
+                if (sub.getPresentationType() == null || !"Poster".equalsIgnoreCase(sub.getPresentationType())) continue;
+                score = sub.getAverageScore();
+    
+            } else if ("People's Choice".equals(awardType)) {
+                double total = 0.0;
+            for (Evaluation ev : sub.getEvaluations()) {
+                if (ev == null) continue;
+                total += ev.getTotalScore();
+            }
+            score = total;
 
-            double avgScore = sub.getAverageScore();
-            if (avgScore > highestScore) {
-                highestScore = avgScore;
-                bestSubmission = sub;
+            } else {
+                continue;
+            }
+    
+            if (score > bestScore) {
+                bestScore = score;
+                best = sub;
             }
         }
-
-        this.winner = bestSubmission;
-        this.winningScore = highestScore;
+    
+        setWinner(best, bestScore);
     }
 
     // Get award details
@@ -97,18 +99,24 @@ public class Award implements Serializable {
         if (winner == null) {
             return String.format("Award: %s\nWinner: Not yet determined", awardType);
         }
-
-        String studentName = winner.getStudentName(); // safe helper from Submission
+    
+        String studentName = winner.getStudentName();
+        String label = "Average Score";
+        if ("People's Choice".equals(awardType)) {
+            label = "Total Marks";
+        }
+    
         return String.format(
                 "Award: %s\n" +
                 "Winner Submission ID: %s\n" +
                 "Submission: %s\n" +
                 "Student: %s\n" +
-                "Average Score: %.2f",
+                "%s: %.2f",
                 awardType,
                 winner.getSubmissionId(),
                 winner.getTitle(),
                 (studentName.isEmpty() ? "Unknown" : studentName),
+                label,
                 winningScore
         );
     }
