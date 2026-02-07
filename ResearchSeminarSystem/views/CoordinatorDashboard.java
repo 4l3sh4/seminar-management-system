@@ -582,7 +582,7 @@ public class CoordinatorDashboard extends JFrame {
 
         // Confirmation dialog
         int confirm = JOptionPane.showConfirmDialog(this,
-                "Create session on " + date + "?\\n\\nWarning: This action cannot be undone.",
+                "Create session on " + date + "?\n\nWarning: This action cannot be undone.",
                 "Confirm Session Creation",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE);
@@ -828,7 +828,7 @@ public class CoordinatorDashboard extends JFrame {
                 String subType = submission.getPresentationType();
                 if (sType != null && subType != null && !sType.equalsIgnoreCase(subType)) {
                     failureReasons.append("✗ ").append(submission.getTitle())
-                            .append(" (Type mismatch: ").append(subType).append(")\\n");
+                            .append(" (Type mismatch: ").append(subType).append(")\n");
                     failedCount++;
                     continue;
                 }
@@ -836,15 +836,33 @@ public class CoordinatorDashboard extends JFrame {
                 Session already = dataManager.findSessionBySubmissionId(submission.getSubmissionId());
                 if (already != null) {
                     failureReasons.append("✗ ").append(submission.getTitle())
-                            .append(" (Already assigned to ").append(already.getSessionId()).append(")\\n");
+                            .append(" (Already assigned to ").append(already.getSessionId()).append(")\n");
                     failedCount++;
                     continue;
+                }
+                
+                // Check if another submission from the same student is already in this session
+                Student submissionStudent = submission.getStudent();
+                if (submissionStudent != null) {
+                    boolean duplicateStudentFound = false;
+                    for (Submission sessionSub : session.getSubmissions()) {
+                        if (sessionSub.getStudent() != null && 
+                            sessionSub.getStudent().getUserId().equals(submissionStudent.getUserId()) &&
+                            !sessionSub.getSubmissionId().equals(submission.getSubmissionId())) {
+                            failureReasons.append("✗ ").append(submission.getTitle())
+                                    .append(" (Student already has submission in this session)\n");
+                            failedCount++;
+                            duplicateStudentFound = true;
+                            break;
+                        }
+                    }
+                    if (duplicateStudentFound) continue;
                 }
 
                 boolean ok = coordinator.assignSubmissionToSession(session, submission);
             
                 if (!ok) {
-                    failureReasons.append("✗ ").append(submission.getTitle()).append(" (Assignment failed)\\n");
+                    failureReasons.append("✗ ").append(submission.getTitle()).append(" (Assignment failed)\n");
                     failedCount++;
                     continue;
                 }
@@ -852,7 +870,7 @@ public class CoordinatorDashboard extends JFrame {
                 assignedCount++;
         
             } catch (Exception ex) {
-                failureReasons.append("✗ ").append(submission.getTitle()).append(" (").append(ex.getMessage()).append(")\\n");
+                failureReasons.append("✗ ").append(submission.getTitle()).append(" (").append(ex.getMessage()).append(")\n");
                 failedCount++;
             }
         }
@@ -861,9 +879,9 @@ public class CoordinatorDashboard extends JFrame {
         loadSessions();
         loadSubmissions();
         
-        String message = "Assigned: " + assignedCount + " submission(s)\\n";
+        String message = "Assigned: " + assignedCount + " submission(s)\n";
         if (failedCount > 0) {
-            message += "Failed: " + failedCount + "\\n\\n" + failureReasons.toString();
+            message += "Failed: " + failedCount + "\n\n" + failureReasons.toString();
         }
         
         JOptionPane.showMessageDialog(this, message, "Assignment Summary", JOptionPane.INFORMATION_MESSAGE);
@@ -901,7 +919,7 @@ public class CoordinatorDashboard extends JFrame {
                 boolean ok = coordinator.assignEvaluatorToSession(session, eval);
             
                 if (!ok) {
-                    failureReasons.append("✗ ").append(eval.getName()).append(" (Assignment failed)\\n");
+                    failureReasons.append("✗ ").append(eval.getName()).append(" (Assignment failed)\n");
                     failedCount++;
                     continue;
                 }
@@ -909,7 +927,7 @@ public class CoordinatorDashboard extends JFrame {
                 assignedCount++;
         
             } catch (Exception ex) {
-                failureReasons.append("✗ ").append(eval.getName()).append(" (").append(ex.getMessage()).append(")\\n");
+                failureReasons.append("✗ ").append(eval.getName()).append(" (").append(ex.getMessage()).append(")\n");
                 failedCount++;
             }
         }
@@ -918,9 +936,9 @@ public class CoordinatorDashboard extends JFrame {
         loadSessions();
         loadEvaluators();
         
-        String message = "Assigned: " + assignedCount + " evaluator(s)\\n";
+        String message = "Assigned: " + assignedCount + " evaluator(s)\n";
         if (failedCount > 0) {
-            message += "Failed: " + failedCount + "\\n\\n" + failureReasons.toString();
+            message += "Failed: " + failedCount + "\n\n" + failureReasons.toString();
         }
         
         JOptionPane.showMessageDialog(this, message, "Assignment Summary", JOptionPane.INFORMATION_MESSAGE);

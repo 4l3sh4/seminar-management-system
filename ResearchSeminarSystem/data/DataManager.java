@@ -51,6 +51,14 @@ public class DataManager {
         }
     }
 
+    // Reload the data from disk to get the latest changes
+    public void reloadFromDisk() {
+        DataStore reloadedStore = loadFromDisk();
+        if (reloadedStore != null) {
+            store = reloadedStore;
+        }
+    }
+
     // User management 
     public void addStudent(Student student) {
         if (student == null) return;

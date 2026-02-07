@@ -71,6 +71,13 @@ public class StudentDashboard extends JFrame {
         tabbedPane.setFont(new Font("Arial", Font.PLAIN, 13));
         tabbedPane.addTab("Submissions", createSubmissionsPanel());
         tabbedPane.addTab("New Registration", createRegistrationPanel());
+        
+        // Add listener to refresh submissions when tab is activated
+        tabbedPane.addChangeListener(e -> {
+            if (tabbedPane.getSelectedIndex() == 0) {
+                loadSubmissions();
+            }
+        });
 
         // Bottom
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 10));
@@ -361,8 +368,21 @@ public class StudentDashboard extends JFrame {
     }
 
     private void loadSubmissions() {
+        // Reload data from disk to ensure we have the latest changes from the coordinator
+        dataManager.reloadFromDisk();
+        
         tableModel.setRowCount(0);
-        for (Submission sub : student.getSubmissions()) {
+        
+        // Get all submissions from dataManager that belong to this student
+        List<Submission> studentSubmissions = new ArrayList<>();
+        for (Submission sub : dataManager.getSubmissions()) {
+            if (sub.getStudent() != null && sub.getStudent().getUserId().equals(student.getUserId())) {
+                studentSubmissions.add(sub);
+            }
+        }
+        
+        // Display submissions in table
+        for (Submission sub : studentSubmissions) {
             Session s = sub.getSession();
             String sessionInfo = (s == null)
                     ? "Not Assigned"
@@ -378,6 +398,10 @@ public class StudentDashboard extends JFrame {
                     sub.getEvaluations().size()
             });
         }
+        
+        // Update student's submission list to keep it in sync
+        student.getSubmissions().clear();
+        student.getSubmissions().addAll(studentSubmissions);
     }
 
     private void viewSubmissionDetails() {
@@ -391,14 +415,9 @@ public class StudentDashboard extends JFrame {
         }
 
         String submissionId = (String) tableModel.getValueAt(selectedRow, 0);
-        Submission submission = null;
-
-        for (Submission sub : student.getSubmissions()) {
-            if (sub != null && submissionId.equals(sub.getSubmissionId())) {
-                submission = sub;
-                break;
-            }
-        }
+        
+        // Get fresh submission data from dataManager
+        Submission submission = dataManager.findSubmissionById(submissionId);
 
         if (submission != null) {
             JOptionPane.showMessageDialog(this,
@@ -416,14 +435,9 @@ public class StudentDashboard extends JFrame {
         }
         
         String submissionId = (String) tableModel.getValueAt(selectedRow, 0);
-        Submission submission = null;
         
-        for (Submission sub : student.getSubmissions()) {
-            if (sub != null && submissionId.equals(sub.getSubmissionId())) {
-                submission = sub;
-                break;
-            }
-        }
+        // Get fresh submission data from dataManager
+        Submission submission = dataManager.findSubmissionById(submissionId);
         
         if(submission == null || submission.getEvaluations().isEmpty()) {
             JOptionPane.showMessageDialog(this, "No evaluation yet for this submission.", "No Feedback", JOptionPane.INFORMATION_MESSAGE);
@@ -513,18 +527,22 @@ public class StudentDashboard extends JFrame {
         }
 
         String submissionId = (String) tableModel.getValueAt(selectedRow, 0);
-        Submission submission = null;
-
-        for (Submission sub : student.getSubmissions()) {
-            if (sub != null && submissionId.equals(sub.getSubmissionId())) {
-                submission = sub;
-                break;
-            }
-        }
+        
+        // Reload data from disk to ensure we have the latest state
+        dataManager.reloadFromDisk();
+        
+        // Get fresh submission data from dataManager
+        Submission submission = dataManager.findSubmissionById(submissionId);
 
         if (submission == null) return;
 
-        //Block editing afte evaluation
+        // Block editing if submission is assigned to a session
+        if (submission.getSession() != null) {
+            JOptionPane.showMessageDialog(this, "This submission is assigned to a session and cannot be edited. Please contact the coordinator.", "Edit Not Allowed", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Block editing if already evaluated
         if (!submission.getEvaluations().isEmpty()) {
             JOptionPane.showMessageDialog(this, "This submission has already been evaluated and cannot be edited.", "Edit Not Allowed", JOptionPane.ERROR_MESSAGE);
             return;
@@ -726,16 +744,20 @@ public class StudentDashboard extends JFrame {
         }
 
         String submissionId = (String) tableModel.getValueAt(selectedRow, 0);
-        Submission submission = null;
-
-        for (Submission sub : student.getSubmissions()) {
-            if (sub != null && submissionId.equals(sub.getSubmissionId())) {
-                submission = sub;
-                break;
-            }
-        }
+        
+        // Reload data from disk to ensure we have the latest state
+        dataManager.reloadFromDisk();
+        
+        // Get fresh submission data from dataManager
+        Submission submission = dataManager.findSubmissionById(submissionId);
 
         if (submission == null) return;
+
+        // Block deletion if submission is assigned to a session
+        if (submission.getSession() != null) {
+            JOptionPane.showMessageDialog(this, "This submission is assigned to a session and cannot be deleted. Please contact the coordinator.", "Delete Not Allowed", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
         int confirm = JOptionPane.showConfirmDialog(this,
                 "Are you sure you want to delete submission:\n\"" + submission.getTitle() + "\"?\n\nThis action cannot be undone.",
