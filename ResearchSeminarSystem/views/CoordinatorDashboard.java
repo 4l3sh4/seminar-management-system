@@ -1150,17 +1150,29 @@ public class CoordinatorDashboard extends JFrame {
                     "Empty", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
-        String filename = JOptionPane.showInputDialog(this, "Enter filename:", "report.txt");
-        if (filename == null || filename.trim().isEmpty()) return;
-
-        boolean ok = Report.exportTextToFile(content, filename);
-        if (ok) {
-            JOptionPane.showMessageDialog(this, "Exported to " + filename,
+    
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Save Report");
+        chooser.setSelectedFile(new File("report.txt"));
+    
+        int result = chooser.showSaveDialog(this);
+        if (result != JFileChooser.APPROVE_OPTION) return;
+    
+        File file = chooser.getSelectedFile();
+    
+        // Force .txt if user forgets
+        if (!file.getName().toLowerCase().endsWith(".txt")) {
+            file = new File(file.getParentFile(), file.getName() + ".txt");
+        }
+    
+        try (java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.FileWriter(file))) {
+            writer.write(content);
+            JOptionPane.showMessageDialog(this, "Exported to:\n" + file.getAbsolutePath(),
                     "Success", JOptionPane.INFORMATION_MESSAGE);
-        } else {
-            JOptionPane.showMessageDialog(this, "Export failed.",
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Export failed:\n" + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
         }
     }
 

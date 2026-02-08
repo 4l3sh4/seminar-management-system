@@ -2,12 +2,12 @@
 dependency1.from=DataManager
 dependency1.to=DataStore
 dependency1.type=UsesDependency
-objectbench.height=124
-objectbench.width=1256
+objectbench.height=125
+objectbench.width=1257
 package.divider.horizontal=0.6
-package.divider.vertical=0.7936259143155695
-package.editor.height=498
-package.editor.width=1167
+package.divider.vertical=0.7931303669008587
+package.editor.height=501
+package.editor.width=1168
 package.editor.x=0
 package.editor.y=0
 package.frame.height=737
